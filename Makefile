@@ -14,9 +14,18 @@ GITHUB_OWNER = imjeffjay
 GITHUB_REPO = sample_ML_AWS_pipeline
 TASK_FAMILY = fastapi-task
 CONTAINER_NAME = fastapi-container
-SUBNET_IDS = subnet-abc12345,subnet-def67890
 PROJECT_NAME = FastAPIBuildProject
 ECR_REPO_NAME = fastapi-app
+
+# Dynamically fetch subnets from AWS
+SUBNET_IDS = $(shell aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(VPC_ID)" --query "Subnets[*].SubnetId" --output text | tr '\t' ',')
+
+# ====================
+# Debugging Subnets
+# ====================
+debug-subnets:
+	@echo "Fetching Subnets..."
+	@echo "SUBNET_IDS: $(SUBNET_IDS)"
 
 # ====================
 # Deploy CloudFormation Stack
