@@ -17,11 +17,22 @@ SAMPLE_PIPELINE_PROJECT_ENV = sample_pipeline_project_env
 
 # Dynamically fetch secrets from Secrets Manager
 SECRETS := $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text)
+
+# Parse individual variables from the secrets
 AWS_ACCOUNT_ID := $(shell echo $(SECRETS) | jq -r '.AWS_ACCOUNT_ID')
 AWS_REGION := $(shell echo $(SECRETS) | jq -r '.AWS_REGION')
 GITHUB_REPO := $(shell echo $(SECRETS) | jq -r '.GITHUB_REPO')
 GITHUB_USERNAME := $(shell echo $(SECRETS) | jq -r '.GITHUB_USERNAME')
 GITHUB_OAUTH_TOKEN := $(shell echo $(SECRETS) | jq -r '.GITHUB_OAUTH_TOKEN')
+
+# Debugging: Print variables
+debug:
+	@echo "Secrets: $(SECRETS)"
+	@echo "AWS_ACCOUNT_ID: $(AWS_ACCOUNT_ID)"
+	@echo "AWS_REGION: $(AWS_REGION)"
+	@echo "GITHUB_REPO: $(GITHUB_REPO)"
+	@echo "GITHUB_USERNAME: $(GITHUB_USERNAME)"
+	@echo "GITHUB_OAUTH_TOKEN: $(GITHUB_OAUTH_TOKEN)"
 
 # ====================
 # Help Command
@@ -34,6 +45,7 @@ help:
 	@echo "  make aws-ecs-service   - Create ECS service"
 	@echo "  make aws-pipeline      - Create CodePipeline"
 	@echo "  make aws-setup         - Run full AWS setup"
+	@echo "  make debug             - Print secrets and parsed variables"
 
 # ====================
 # AWS Setup Commands
