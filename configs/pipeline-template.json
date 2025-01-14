@@ -1,0 +1,89 @@
+{
+    "pipeline": {
+      "name": "FastAPIPipeline",
+      "roleArn": "arn:aws:iam::<your-account-id>:role/CodePipelineRole",
+      "artifactStore": {
+        "type": "S3",
+        "location": "codepipeline-artifacts-bucket"
+      },
+      "stages": [
+        {
+          "name": "Source",
+          "actions": [
+            {
+              "name": "Source",
+              "actionTypeId": {
+                "category": "Source",
+                "owner": "ThirdParty",
+                "provider": "GitHub",
+                "version": "1"
+              },
+              "outputArtifacts": [
+                {
+                  "name": "SourceOutput"
+                }
+              ],
+              "configuration": {
+                "Owner": "<github-username>",
+                "Repo": "<github-repo>",
+                "Branch": "main",
+                "OAuthToken": "<github-oauth-token>"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Build",
+          "actions": [
+            {
+              "name": "Build",
+              "actionTypeId": {
+                "category": "Build",
+                "owner": "AWS",
+                "provider": "CodeBuild",
+                "version": "1"
+              },
+              "inputArtifacts": [
+                {
+                  "name": "SourceOutput"
+                }
+              ],
+              "outputArtifacts": [
+                {
+                  "name": "BuildOutput"
+                }
+              ],
+              "configuration": {
+                "ProjectName": "FastAPIBuildProject"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Deploy",
+          "actions": [
+            {
+              "name": "Deploy",
+              "actionTypeId": {
+                "category": "Deploy",
+                "owner": "AWS",
+                "provider": "ECS",
+                "version": "1"
+              },
+              "inputArtifacts": [
+                {
+                  "name": "BuildOutput"
+                }
+              ],
+              "configuration": {
+                "ClusterName": "FastAPICluster",
+                "ServiceName": "FastAPIService",
+                "FileName": "imagedefinitions.json"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+  
