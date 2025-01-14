@@ -70,12 +70,12 @@ aws-ecs-service:
 
 aws-pipeline:
 	@echo "Creating CodePipeline..."
-	sed "s/<your-account-id>/$(AWS_ACCOUNT_ID)/g" $(PIPELINE_TEMPLATE) | \
-	sed "s/<region>/$(AWS_REGION)/g" | \
-	sed "s/<github-repo>/$(GITHUB_REPO)/g" | \
-	sed "s/<github-username>/$(GITHUB_USERNAME)/g" | \
-	sed "s/<github-oauth-token>/$(GITHUB_OAUTH_TOKEN)/g" > $(PIPELINE_OUTPUT)
-	aws codepipeline create-pipeline --cli-input-json file://$(PIPELINE_OUTPUT)
+	sed "s|<your-account-id>|$(AWS_ACCOUNT_ID)|g" $(PIPELINE_TEMPLATE) | \
+	sed "s|<region>|$(AWS_REGION)|g" | \
+	sed "s|<github-repo>|$(GITHUB_REPO)|g" | \
+	sed "s|<github-username>|$(GITHUB_USERNAME)|g" | \
+	sed "s|<github-oauth-token>|$(GITHUB_OAUTH_TOKEN)|g" > $(PIPELINE_OUTPUT)
+
 
 aws-setup: aws-ecr aws-ecs-cluster aws-ecs-task aws-ecs-service aws-pipeline
 	@echo "AWS setup completed successfully!"
