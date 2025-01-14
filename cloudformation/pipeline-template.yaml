@@ -1,0 +1,159 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  GitHubOAuthToken:
+    Type: String
+    Description: "GitHub OAuth token for accessing the repository"
+  GitHubOwner:
+    Type: String
+    Description: "GitHub repository owner"
+  GitHubRepo:
+    Type: String
+    Description: "GitHub repository name"
+  AWSRegion:
+    Type: String
+    Default: "us-east-1"
+    Description: "AWS Region"
+  RepositoryName:
+    Type: String
+    Default: "fastapi-app"
+    Description: "ECR Repository Name"
+  ClusterName:
+    Type: String
+    Default: "FastAPICluster"
+    Description: "ECS Cluster Name"
+  TaskFamily:
+    Type: String
+    Default: "fastapi-task"
+    Description: "ECS Task Definition Family"
+  ContainerName:
+    Type: String
+    Default: "fastapi-container"
+    Description: "ECS Container Name"
+  SubnetIds:
+    Type: CommaDelimitedList
+    Description: "List of Subnet IDs for ECS tasks"
+  ProjectName:
+    Type: String
+    Default: "FastAPIBuildProject"
+    Description: "CodeBuild Project Name"
+
+Resources:
+  # ECR Repository
+  ECRRepository:
+    Type: "AWS::ECR::Repository"
+    Properties:
+      RepositoryName: !Ref RepositoryName
+
+  # ECS Cluster
+  ECSCluster:
+    Type: "AWS::ECS::Cluster"
+    Properties:
+      ClusterName: !Ref ClusterName
+
+  # ECS Task Definition
+  ECSTaskDefinition:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      Family: !Ref TaskFamily
+      ContainerDefinitions:
+        - Name: !Ref ContainerName
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${RepositoryName}:latest"
+          Memory: 512
+          Cpu: 256
+          PortMappings:
+            - ContainerPort: 8000
+              HostPort: 8000
+
+  # ECS Service
+  ECSService:
+    Type: "AWS::ECS::Service"
+    Properties:
+      Cluster: !Ref ECSCluster
+      DesiredCount: 1
+      TaskDefinition: !Ref ECSTaskDefinition
+      LaunchType: "FARGATE"
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets: !Ref SubnetIds
+          AssignPublicIp: "ENABLED"
+
+  # IAM Role for CodePipeline
+  CodePipelineRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: "codepipeline.amazonaws.com"
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AWSCodePipelineFullAccess"
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        - "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess"
+        - "arn:aws:iam::aws:policy/AmazonEC2ContainerServiceFullAccess"
+
+  # CodeBuild Project
+  CodeBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: !Ref ProjectName
+      Source:
+        Type: "GITHUB"
+        Location: !Sub "https://github.com/${GitHubOwner}/${GitHubRepo}.git"
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        Image: "aws/codebuild/standard:5.0"
+        Type: "LINUX_CONTAINER"
+      ServiceRole: !GetAtt CodePipelineRole.Arn
+
+  # CodePipeline
+  CodePipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Stages:
+        - Name: "Source"
+          Actions:
+            - Name: "Source"
+              ActionTypeId:
+                Category: "Source"
+                Owner: "ThirdParty"
+                Provider: "GitHub"
+                Version: "1"
+              Configuration:
+                Owner: !Ref GitHubOwner
+                Repo: !Ref GitHubRepo
+                Branch: "main"
+                OAuthToken: !Ref GitHubOAuthToken
+              OutputArtifacts:
+                - Name: "SourceOutput"
+        - Name: "Build"
+          Actions:
+            - Name: "Build"
+              ActionTypeId:
+                Category: "Build"
+                Owner: "AWS"
+                Provider: "CodeBuild"
+                Version: "1"
+              InputArtifacts:
+                - Name: "SourceOutput"
+              OutputArtifacts:
+                - Name: "BuildOutput"
+              Configuration:
+                ProjectName: !Ref ProjectName
+        - Name: "Deploy"
+          Actions:
+            - Name: "Deploy"
+              ActionTypeId:
+                Category: "Deploy"
+                Owner: "AWS"
+                Provider: "ECS"
+                Version: "1"
+              InputArtifacts:
+                - Name: "BuildOutput"
+              Configuration:
+                ClusterName: !Ref ECSCluster
+                ServiceName: !Ref ECSService
+                FileName: "imagedefinitions.json"
