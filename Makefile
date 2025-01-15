@@ -17,14 +17,17 @@ CONTAINER_NAME = fastapi-container
 PROJECT_NAME = FastAPIBuildProject
 ECR_REPO_NAME = fastapi-app
 
-# Dynamically fetch subnets from AWS
+# Fetch default VPC ID
+VPC_ID = $(shell aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query "Vpcs[0].VpcId" --output text)
+
+# Dynamically fetch subnet IDs from the default VPC
 SUBNET_IDS = $(shell aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(VPC_ID)" --query "Subnets[*].SubnetId" --output text | tr '\t' ',')
 
 # ====================
 # Debugging Subnets
 # ====================
-debug-subnets:
-	@echo "Fetching Subnets..."
+debug-config:
+	@echo "VPC_ID: $(VPC_ID)"
 	@echo "SUBNET_IDS: $(SUBNET_IDS)"
 
 # ====================
