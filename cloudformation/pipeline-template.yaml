@@ -1,4 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
+Description: "CloudFormation template for FastAPI ECS pipeline setup with CodePipeline and CodeBuild."
+
 Parameters:
   GitHubOAuthToken:
     Type: String
@@ -67,12 +69,11 @@ Resources:
       ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
       ContainerDefinitions:
         - Name: !Ref ContainerName
-          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepoName}:latest"
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${RepositoryName}:latest"
           Memory: 512
           Cpu: 256
           PortMappings:
             - ContainerPort: 8000
-
 
   ECSExecutionRole:
     Type: "AWS::IAM::Role"
@@ -101,23 +102,23 @@ Resources:
           AssignPublicIp: "ENABLED"
 
   # IAM Role for CodePipeline
-CodePipelineRole:
-  Type: "AWS::IAM::Role"
-  Properties:
-    AssumeRolePolicyDocument:
-      Version: "2012-10-17"
-      Statement:
-        - Effect: Allow
-          Principal:
-            Service: 
-              - "codepipeline.amazonaws.com"
-              - "codebuild.amazonaws.com" # Added CodeBuild
-          Action: "sts:AssumeRole"
-    ManagedPolicyArns:
-      - "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
-      - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-      - "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess"
-      - "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
+  CodePipelineRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+                - "codepipeline.amazonaws.com"
+                - "codebuild.amazonaws.com"
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        - "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess"
+        - "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
 
   # CodeBuild Project
   CodeBuildProject:
@@ -184,3 +185,14 @@ CodePipelineRole:
                 ClusterName: !Ref ECSCluster
                 ServiceName: !Ref ECSService
                 FileName: "imagedefinitions.json"
+
+Outputs:
+  PipelineName:
+    Description: "The name of the CodePipeline"
+    Value: !Ref CodePipeline
+  ClusterName:
+    Description: "The name of the ECS Cluster"
+    Value: !Ref ECSCluster
+  TaskDefinition:
+    Description: "The ECS Task Definition"
+    Value: !Ref ECSTaskDefinition
