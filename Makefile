@@ -58,6 +58,9 @@ deploy-ecr-ecs:
 			TaskFamily=$(TASK_FAMILY) \
 			ClusterName=FastAPICluster \
 			SubnetIds=$(SUBNET_IDS) \
+			GitHubOwner=$(GITHUB_OWNER) \
+			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
+			GitHubRepo=$(GITHUB_REPO) \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # Build IAM Role
