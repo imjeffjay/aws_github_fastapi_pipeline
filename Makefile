@@ -22,6 +22,7 @@ IMAGEDef_FILE = $(CONFIG_DIR)/imagedefinitions.json
 AWS_ACCOUNT_ID = $(shell aws sts get-caller-identity --query Account --output text)
 GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GITHUB_OAUTH_TOKEN')
 DOCKER_IMAGE = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):$(IMAGE_TAG)
+DUMMY_IMAGE = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):dummy
 
 # Fetch default VPC ID
 VPC_ID = $(shell aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query "Vpcs[0].VpcId" --output text)
@@ -37,48 +38,50 @@ debug-config:
 	@echo "AWS_ACCOUNT_ID: $(AWS_ACCOUNT_ID)"
 	@echo "GITHUB_OAUTH_TOKEN: $(GITHUB_OAUTH_TOKEN)"
 	@echo "DOCKER_IMAGE: $(DOCKER_IMAGE)"
+	@echo "DUMMY_IMAGE: $(DUMMY_IMAGE)"
 	@echo "VPC_ID: $(VPC_ID)"
 	@echo "SUBNET_IDS: $(SUBNET_IDS)"
 
 # ====================
-# Generate Image Definitions
+# Workflow
 # ====================
 
+# Deploy ECS and ECR infrastructure
+deploy-ecr-ecs:
+	@echo "Deploying ECS and ECR infrastructure..."
+	aws cloudformation deploy \
+		--template-file $(PIPELINE_TEMPLATE) \
+		--stack-name $(STACK_NAME) \
+		--parameter-overrides \
+			RepositoryName=$(ECR_REPO_NAME) \
+			AWSRegion=$(AWS_REGION) \
+			TaskFamily=$(TASK_FAMILY) \
+			ClusterName=FastAPICluster \
+			SubnetIds=$(SUBNET_IDS) \
+		--capabilities CAPABILITY_NAMED_IAM
+
+# Build IAM Role
+build-iam-role:
+	@echo "Building IAM roles for CodePipeline..."
+	# Add specific commands for IAM role creation if required.
+
+# Push Dummy Docker Image
+push-dummy-image:
+	@echo "Building and pushing a dummy Docker image..."
+	docker build -t $(ECR_REPO_NAME) .
+	docker tag $(ECR_REPO_NAME):dummy $(DUMMY_IMAGE)
+	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
+	docker push $(DUMMY_IMAGE)
+
+# Generate imagedefinitions.json
 generate-imagedefinitions:
-	@echo "Generating imagedefinitions.json..."
-	@echo '[{"name": "$(CONTAINER_NAME)", "imageUri": "$(DOCKER_IMAGE)"}]' > $(IMAGEDef_FILE)
-	@echo "imagedefinitions.json generated successfully!"
+	@echo "Generating imagedefinitions.json with dummy image..."
+	@echo '[{"name": "$(CONTAINER_NAME)", "imageUri": "$(DUMMY_IMAGE)"}]' > $(IMAGEDef_FILE)
 	@cat $(IMAGEDef_FILE)
 
-# ====================
-# Docker Commands
-# ====================
-
-docker-build:
-	@echo "Building Docker image..."
-	docker build -t $(ECR_REPO_NAME) .
-
-docker-tag:
-	@echo "Tagging Docker image..."
-	docker tag $(ECR_REPO_NAME):$(IMAGE_TAG) $(DOCKER_IMAGE)
-
-docker-login:
-	@echo "Logging into ECR..."
-	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
-
-docker-push:
-	@echo "Pushing Docker image to ECR..."
-	docker push $(DOCKER_IMAGE)
-
-docker-deploy: docker-build docker-tag docker-login docker-push
-	@echo "Docker image pushed successfully!"
-
-# ====================
-# Deployment Commands
-# ====================
-
-deploy-cloudformation: docker-deploy generate-imagedefinitions
-	@echo "Deploying CloudFormation stack..."
+# Deploy CodePipeline
+deploy-pipeline:
+	@echo "Deploying CodePipeline..."
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
 		--stack-name $(STACK_NAME) \
@@ -88,10 +91,13 @@ deploy-cloudformation: docker-deploy generate-imagedefinitions
 			GitHubRepo=$(GITHUB_REPO) \
 			AWSRegion=$(AWS_REGION) \
 			RepositoryName=$(ECR_REPO_NAME) \
-			ClusterName=FastAPICluster \
-			TaskFamily=$(TASK_FAMILY) \
-			ContainerName=$(CONTAINER_NAME) \
-			SubnetIds=$(SUBNET_IDS) \
+			ImageTag=$(IMAGE_TAG) \
 			ProjectName=$(PROJECT_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM
-	@echo "CloudFormation stack deployed successfully!"
+
+# ====================
+# Combined Workflow
+# ====================
+
+setup-all: deploy-ecr-ecs build-iam-role push-dummy-image generate-imagedefinitions deploy-pipeline
+	@echo "Setup complete!"

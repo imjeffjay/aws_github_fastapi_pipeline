@@ -11,9 +11,6 @@ git pull origin main
 ## Setup services
 
 Steps:
-#1
-make generate-imagedefinitions
-#2
 make deploy-cloudformation
 
 
@@ -23,7 +20,7 @@ make deploy-cloudformation
 
 aws cloudformation delete-stack --stack-name FastAPIPipelineStack
 aws cloudformation wait stack-delete-complete --stack-name FastAPIPipelineStack
-
 aws ecr delete-repository --repository-name fastapi-app --force
 aws ecs delete-cluster --cluster FastAPICluster
 aws iam delete-role --role-name CodePipelineRole
+make deploy-cloudformation
