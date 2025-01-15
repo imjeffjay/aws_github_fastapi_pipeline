@@ -17,7 +17,7 @@ make setup-all
 ## Delete AWS and restart:
 
 
-
+cd aws_pipeline_setup
 aws cloudformation delete-stack --stack-name FastAPIPipelineStack
 aws cloudformation wait stack-delete-complete --stack-name FastAPIPipelineStack
 aws ecr delete-repository --repository-name fastapi-app --force

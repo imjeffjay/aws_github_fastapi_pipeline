@@ -73,7 +73,7 @@ Resources:
           PortMappings:
             - ContainerPort: 8000
 
- ECSExecutionRole:
+  ECSExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
