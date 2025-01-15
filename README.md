@@ -19,8 +19,11 @@ make deploy-cloudformation
 
 ## Delete AWS and restart:
 
+
+
 aws cloudformation delete-stack --stack-name FastAPIPipelineStack
 aws cloudformation wait stack-delete-complete --stack-name FastAPIPipelineStack
 
 aws ecr delete-repository --repository-name fastapi-app --force
 aws ecs delete-cluster --cluster FastAPICluster
+aws iam delete-role --role-name CodePipelineRole
