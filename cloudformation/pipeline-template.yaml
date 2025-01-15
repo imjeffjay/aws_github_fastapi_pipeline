@@ -37,9 +37,13 @@ Parameters:
     Default: "FastAPIBuildProject"
     Description: "CodeBuild Project Name"
 
+Conditions:
+  ECRNotExists: !Equals [!Ref RepositoryName, ""]
+
 Resources:
   # ECR Repository
   ECRRepository:
+    Condition: ECRNotExists
     Type: "AWS::ECR::Repository"
     Properties:
       RepositoryName: !Ref RepositoryName
