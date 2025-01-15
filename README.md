@@ -23,4 +23,5 @@ aws cloudformation wait stack-delete-complete --stack-name FastAPIPipelineStack
 aws ecr delete-repository --repository-name fastapi-app --force
 aws ecs delete-cluster --cluster FastAPICluster
 aws iam delete-role --role-name CodePipelineRole
+git pull origin main
 make setup-all
