@@ -1,15 +1,11 @@
 # ====================
-# Variables
+# Static Variables
 # ====================
 TEMPLATE_DIR = cloudformation
 PIPELINE_TEMPLATE = $(TEMPLATE_DIR)/pipeline-template.yaml
 STACK_NAME = FastAPIPipelineStack
 AWS_REGION = us-east-1
 SAMPLE_PIPELINE_PROJECT_ENV = sample_pipeline_project_env
-
-# Dynamic inputs
-AWS_ACCOUNT_ID = $(shell aws sts get-caller-identity --query Account --output text)
-GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GITHUB_OAUTH_TOKEN')
 GITHUB_OWNER = imjeffjay
 GITHUB_REPO = sample_ML_AWS_pipeline
 TASK_FAMILY = fastapi-task
@@ -20,6 +16,13 @@ IMAGE_TAG = latest
 CONFIG_DIR = configs
 IMAGEDef_FILE = $(CONFIG_DIR)/imagedefinitions.json
 
+# ====================
+# Dynamic Variables
+# ====================
+AWS_ACCOUNT_ID = $(shell aws sts get-caller-identity --query Account --output text)
+GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GITHUB_OAUTH_TOKEN')
+DOCKER_IMAGE = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):$(IMAGE_TAG)
+
 # Fetch default VPC ID
 VPC_ID = $(shell aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query "Vpcs[0].VpcId" --output text)
 
@@ -27,16 +30,54 @@ VPC_ID = $(shell aws ec2 describe-vpcs --filters "Name=is-default,Values=true" -
 SUBNET_IDS = $(shell aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(VPC_ID)" --query "Subnets[*].SubnetId" --output text | tr '\t' ',')
 
 # ====================
-# Debugging Subnets
+# Debugging Commands
 # ====================
+
 debug-config:
+	@echo "AWS_ACCOUNT_ID: $(AWS_ACCOUNT_ID)"
+	@echo "GITHUB_OAUTH_TOKEN: $(GITHUB_OAUTH_TOKEN)"
+	@echo "DOCKER_IMAGE: $(DOCKER_IMAGE)"
 	@echo "VPC_ID: $(VPC_ID)"
 	@echo "SUBNET_IDS: $(SUBNET_IDS)"
 
 # ====================
-# Deploy CloudFormation Stack
+# Generate Image Definitions
 # ====================
-deploy-cloudformation:
+
+generate-imagedefinitions:
+	@echo "Generating imagedefinitions.json..."
+	@echo '[{"name": "$(CONTAINER_NAME)", "imageUri": "$(DOCKER_IMAGE)"}]' > $(IMAGEDef_FILE)
+	@echo "imagedefinitions.json generated successfully!"
+	@cat $(IMAGEDef_FILE)
+
+# ====================
+# Docker Commands
+# ====================
+
+docker-build:
+	@echo "Building Docker image..."
+	docker build -t $(ECR_REPO_NAME) .
+
+docker-tag:
+	@echo "Tagging Docker image..."
+	docker tag $(ECR_REPO_NAME):$(IMAGE_TAG) $(DOCKER_IMAGE)
+
+docker-login:
+	@echo "Logging into ECR..."
+	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
+
+docker-push:
+	@echo "Pushing Docker image to ECR..."
+	docker push $(DOCKER_IMAGE)
+
+docker-deploy: docker-build docker-tag docker-login docker-push
+	@echo "Docker image pushed successfully!"
+
+# ====================
+# Deployment Commands
+# ====================
+
+deploy-cloudformation: docker-deploy generate-imagedefinitions
 	@echo "Deploying CloudFormation stack..."
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
@@ -54,42 +95,3 @@ deploy-cloudformation:
 			ProjectName=$(PROJECT_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM
 	@echo "CloudFormation stack deployed successfully!"
-
-# ====================
-# Generate Image Definitions
-# ====================
-
-generate-imagedefinitions:
-	@echo "Generating imagedefinitions.json..."
-	@echo '[{"name": "fastapi-container", "imageUri": "$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):$(IMAGE_TAG)"}]' > $(IMAGEDef_FILE)
-	@echo "imagedefinitions.json generated successfully!"
-	@cat $(IMAGEDef_FILE)
-
-# ====================
-# Debugging Targets
-# ====================
-debug-secrets:
-	@echo "Secrets:"
-	@echo "  GITHUB_OAUTH_TOKEN: $(GITHUB_OAUTH_TOKEN)"
-
-debug-config:
-	@echo "Configuration:"
-	@echo "  AWS_ACCOUNT_ID: $(AWS_ACCOUNT_ID)"
-	@echo "  GITHUB_OWNER: $(GITHUB_OWNER)"
-	@echo "  GITHUB_REPO: $(GITHUB_REPO)"
-	@echo "  TASK_FAMILY: $(TASK_FAMILY)"
-	@echo "  CONTAINER_NAME: $(CONTAINER_NAME)"
-	@echo "  SUBNET_IDS: $(SUBNET_IDS)"
-	@echo "  PROJECT_NAME: $(PROJECT_NAME)"
-	@echo "  ECR_REPO_NAME: $(ECR_REPO_NAME)"
-	@echo "  AWS_REGION: $(AWS_REGION)"
-
-# ====================
-# Help Command
-# ====================
-help:
-	@echo "Available commands:"
-	@echo "  make deploy-cloudformation  - Deploy CloudFormation stack"
-	@echo "  make generate-imagedefinitions - Generate imagedefinitions.json"
-	@echo "  make debug-secrets           - Print secrets from Secrets Manager"
-	@echo "  make debug-config            - Print current configuration variables"
