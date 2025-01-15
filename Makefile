@@ -16,6 +16,9 @@ TASK_FAMILY = fastapi-task
 CONTAINER_NAME = fastapi-container
 PROJECT_NAME = FastAPIBuildProject
 ECR_REPO_NAME = fastapi-app
+IMAGE_TAG = latest
+CONFIG_DIR = configs
+IMAGEDef_FILE = $(CONFIG_DIR)/imagedefinitions.json
 
 # Fetch default VPC ID
 VPC_ID = $(shell aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query "Vpcs[0].VpcId" --output text)
@@ -55,11 +58,12 @@ deploy-cloudformation:
 # ====================
 # Generate Image Definitions
 # ====================
+
 generate-imagedefinitions:
 	@echo "Generating imagedefinitions.json..."
-	echo '[{"name": "$(CONTAINER_NAME)", "imageUri": "$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):latest"}]' > configs/imagedefinitions.json
+	@echo '[{"name": "fastapi-container", "imageUri": "$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):$(IMAGE_TAG)"}]' > $(IMAGEDef_FILE)
 	@echo "imagedefinitions.json generated successfully!"
-	@cat configs/imagedefinitions.json
+	@cat $(IMAGEDef_FILE)
 
 # ====================
 # Debugging Targets
