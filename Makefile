@@ -50,14 +50,18 @@ validate-template:
 # Workflow
 # ====================
 
-create-ecr:
+# create the ECR repository
+build-ecr:
 	@echo "Creating ECR repository: $(ECR_REPO_NAME)..."
 	aws ecr create-repository --repository-name $(ECR_REPO_NAME) || echo "ECR repository $(ECR_REPO_NAME) already exists."
 
-# Build IAM Role
-build-iam-role:
-	@echo "Building IAM roles for CodePipeline..."
-	# Add specific commands for IAM role creation if required.
+# Authenticate Docker with ECR
+auth-ecr:
+	@echo "Authenticating Docker with ECR..."
+	aws ecr get-login-password --region $(AWS_REGION) | \
+	docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
+
+
 
 # Push Dummy Docker Image
 build-push-image:
@@ -67,15 +71,36 @@ build-push-image:
 	docker tag $(ECR_REPO_NAME):latest $(DOCKER_IMAGE)
 	docker push $(DOCKER_IMAGE)
 
+
+
+# Deploy ECS Resources (Cluster, Task Definition, Service):
+deploy-ecs:
+	@echo "Deploying ECS resources..."
+	aws cloudformation deploy \
+		--template-file $(ECS_TEMPLATE_FILE) \
+		--stack-name $(ECS_STACK_NAME) \
+		--parameter-overrides \
+			ClusterName=$(CLUSTER_NAME) \
+			TaskFamily=$(TASK_FAMILY) \
+			SubnetIds=$(SUBNET_IDS) \
+			RepositoryName=$(ECR_REPO_NAME) \
+		--capabilities CAPABILITY_NAMED_IAM
+
 # Generate imagedefinitions.json
 generate-imagedefinitions:
 	@echo "Generating imagedefinitions.json for $(CONTAINER_NAME)..."
 	@echo '[{"name": "$(CONTAINER_NAME)", "imageUri": "$(DOCKER_IMAGE)"}]' > $(IMAGEDef_FILE)
 	@cat $(IMAGEDef_FILE)
 
-# Deploy ECS and ECR infrastructure
-deploy-ecr-ecs: validate-template
-	@echo "Deploying ECS and ECR infrastructure..."
+# Build IAM Role
+build-iam-role:
+	@echo "Building IAM roles for CodePipeline..."
+	# Add specific commands for IAM role creation if required.
+
+
+# Deploy CodePipeline
+deploy-cloudformation:
+	@echo "Deploying CloudFormation stack..."
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
 		--stack-name $(STACK_NAME) \
@@ -88,29 +113,12 @@ deploy-ecr-ecs: validate-template
 			GitHubOwner=$(GITHUB_OWNER) \
 			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
 			GitHubRepo=$(GITHUB_REPO) \
-		--capabilities CAPABILITY_NAMED_IAM || exit 1
-	@echo "ECS and ECR deployment complete!"
-
-
-# Deploy CodePipeline
-deploy-pipeline:
-	@echo "Deploying CodePipeline..."
-	aws cloudformation deploy \
-		--template-file $(PIPELINE_TEMPLATE) \
-		--stack-name $(STACK_NAME) \
-		--parameter-overrides \
-			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
-			GitHubOwner=$(GITHUB_OWNER) \
-			GitHubRepo=$(GITHUB_REPO) \
-			AWSRegion=$(AWS_REGION) \
-			RepositoryName=$(ECR_REPO_NAME) \
-			ImageTag=$(IMAGE_TAG) \
-			ProjectName=$(PROJECT_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # ====================
 # Combined Workflow
 # ====================
 
-setup-all: deploy-ecr-ecs build-iam-role push-dummy-image generate-imagedefinitions deploy-pipeline
-	@echo "Setup complete!"
+# All-in-One Deployment
+deploy-all: build-ecr build-push-image deploy-ecs generate-imagedefinitions deploy-pipeline
+	@echo "All services successfully deployed!"
