@@ -75,16 +75,16 @@ build-push-image:
 
 # Deploy ECS Resources (Cluster, Task Definition, Service):
 deploy-ecs:
-	@echo "Deploying ECS resources..."
-	aws cloudformation deploy \
-		--template-file $(ECS_TEMPLATE_FILE) \
-		--stack-name $(ECS_STACK_NAME) \
-		--parameter-overrides \
-			ClusterName=$(CLUSTER_NAME) \
-			TaskFamily=$(TASK_FAMILY) \
-			SubnetIds=$(SUBNET_IDS) \
-			RepositoryName=$(ECR_REPO_NAME) \
-		--capabilities CAPABILITY_NAMED_IAM
+    @echo "Deploying ECS resources..."
+    aws cloudformation deploy \
+        --template-file $(PIPELINE_TEMPLATE) \
+        --stack-name $(STACK_NAME) \
+        --parameter-overrides \
+            ClusterName=$(ClusterName) \
+            TaskFamily=$(TASK_FAMILY) \
+            SubnetIds=$(SUBNET_IDS) \
+            RepositoryName=$(ECR_REPO_NAME) \
+        --capabilities CAPABILITY_NAMED_IAM
 
 # Generate imagedefinitions.json
 generate-imagedefinitions:
