@@ -2,13 +2,13 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: "CloudFormation template for FastAPI ECS pipeline setup with CodePipeline and CodeBuild."
 
 Parameters:
-  GITHUB_OAUTH_TOKEN:
+  GitHubOAuthToken:
     Type: String
     Description: "GitHub OAuth token for accessing the repository"
-  GITHUB_OWNER:
+  GitHubOwner:
     Type: String
     Description: "GitHub repository owner"
-  GITHUB_REPO:
+  GitHubRepo:
     Type: String
     Description: "GitHub repository name"
   AWSRegion:

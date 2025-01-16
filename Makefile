@@ -17,9 +17,9 @@ IMAGEDef_FILE = $(CONFIG_DIR)/imagedefinitions.json
 # ====================
 # Dynamic Variables
 # ====================
-GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GITHUB_OAUTH_TOKEN')
-GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GITHUB_USERNAME')
-GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GITHUB_REPO')
+GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GitHubOAuthToken')
+GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GitHubOwner')
+GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GitHubRepo')
 
 AWS_ACCOUNT_ID = $(shell aws sts get-caller-identity --query Account --output text)
 DOCKER_IMAGE = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):$(IMAGE_TAG)
@@ -85,8 +85,8 @@ deploy-ecs:
 			TaskFamily=$(TASK_FAMILY) \
 			SubnetIds=$(SUBNET_IDS) \
 			RepositoryName=$(ECR_REPO_NAME) \
-			GitHubOwner=$(GITHUB_OWNER) \
 			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
+			GitHubOwner=$(GITHUB_OWNER) \
 			GitHubRepo=$(GITHUB_REPO) \
 		--capabilities CAPABILITY_NAMED_IAM
 
