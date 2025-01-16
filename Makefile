@@ -6,8 +6,6 @@ PIPELINE_TEMPLATE = $(TEMPLATE_DIR)/pipeline-template.yaml
 STACK_NAME = FastAPIPipelineStack
 AWS_REGION = us-east-1
 SAMPLE_PIPELINE_PROJECT_ENV = sample_pipeline_project_env
-GITHUB_OWNER = imjeffjay
-GITHUB_REPO = sample_ML_AWS_pipeline
 TASK_FAMILY = fastapi-task
 CONTAINER_NAME = fastapi-container
 PROJECT_NAME = FastAPIBuildProject
@@ -19,8 +17,11 @@ IMAGEDef_FILE = $(CONFIG_DIR)/imagedefinitions.json
 # ====================
 # Dynamic Variables
 # ====================
-AWS_ACCOUNT_ID = $(shell aws sts get-caller-identity --query Account --output text)
 GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GITHUB_OAUTH_TOKEN')
+GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GITHUB_USERNAME')
+GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GITHUB_REPO')
+
+AWS_ACCOUNT_ID = $(shell aws sts get-caller-identity --query Account --output text)
 DOCKER_IMAGE = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):$(IMAGE_TAG)
 
 # Fetch default VPC ID
@@ -80,10 +81,13 @@ deploy-ecs:
 		--template-file $(PIPELINE_TEMPLATE) \
 		--stack-name $(STACK_NAME) \
 		--parameter-overrides \
-			ClusterName=$(CLUSTER_NAME) \
+			ClusterName=$(ClusterName) \
 			TaskFamily=$(TASK_FAMILY) \
 			SubnetIds=$(SUBNET_IDS) \
 			RepositoryName=$(ECR_REPO_NAME) \
+			GitHubOwner=$(GITHUB_OWNER) \
+			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
+			GitHubRepo=$(GITHUB_REPO) \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # Generate imagedefinitions.json

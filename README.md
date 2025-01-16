@@ -16,6 +16,7 @@ make setup-all
 
 ## Delete AWS and restart:
 
+cd aws_pipeline_setup
 
 cd aws_pipeline_setup
 aws cloudformation delete-stack --stack-name FastAPIPipelineStack
@@ -25,3 +26,9 @@ aws ecs delete-cluster --cluster FastAPICluster
 aws iam delete-role --role-name CodePipelineRole
 git pull origin main
 make setup-all
+
+01/16/2025
+
+create-ecr
+build-push-image
+generate-imagedefinitions
