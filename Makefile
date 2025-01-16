@@ -13,6 +13,7 @@ ECR_REPO_NAME = fastapi-app
 IMAGE_TAG = latest
 CONFIG_DIR = configs
 IMAGEDef_FILE = $(CONFIG_DIR)/imagedefinitions.json
+CLUSTER_NAME = FastAPICluster # Define the cluster name here
 
 # ====================
 # Dynamic Variables
@@ -64,7 +65,7 @@ auth-ecr:
 
 
 
-# Push Dummy Docker Image
+# Push Docker Image
 build-push-image:
 	@echo "Building Docker image for $(ECR_REPO_NAME)..."
 	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
@@ -76,18 +77,15 @@ build-push-image:
 
 # Deploy ECS Resources (Cluster, Task Definition, Service):
 deploy-ecs:
-	@echo "Deploying ECS resources..."
+	@echo "Deploying ECS-specific resources..."
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
 		--stack-name $(STACK_NAME) \
 		--parameter-overrides \
-			ClusterName=$(ClusterName) \
+			ClusterName=$(CLUSTER_NAME) \
 			TaskFamily=$(TASK_FAMILY) \
 			SubnetIds=$(SUBNET_IDS) \
 			RepositoryName=$(ECR_REPO_NAME) \
-			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
-			GitHubOwner=$(GITHUB_OWNER) \
-			GitHubRepo=$(GITHUB_REPO) \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # Generate imagedefinitions.json
@@ -108,21 +106,23 @@ deploy-cloudformation:
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
 		--stack-name $(STACK_NAME) \
-		--parameter-overrides \
-			RepositoryName=$(ECR_REPO_NAME) \
-			AWSRegion=$(AWS_REGION) \
-			TaskFamily=$(TASK_FAMILY) \
-			ClusterName=$(CLUSTER_NAME) \
-			SubnetIds=$(SUBNET_IDS) \
-			GitHubOwner=$(GITHUB_OWNER) \
-			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
-			GitHubRepo=$(GITHUB_REPO) \
-		--capabilities CAPABILITY_NAMED_IAM
+    --parameter-overrides \
+        GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
+        GitHubOwner=$(GITHUB_OWNER) \
+        GitHubRepo=$(GITHUB_REPO) \
+        AWSRegion=$(AWS_REGION) \
+        RepositoryName=$(ECR_REPO_NAME) \
+        ClusterName=$(CLUSTER_NAME) \
+        TaskFamily=$(TASK_FAMILY) \
+        ContainerName=$(CONTAINER_NAME) \
+        SubnetIds=$(SUBNET_IDS) \
+        ProjectName=$(PROJECT_NAME) \
+    --capabilities CAPABILITY_NAMED_IAM
 
 # ====================
 # Combined Workflow
 # ====================
 
 # All-in-One Deployment
-deploy-all: build-ecr build-push-image deploy-ecs generate-imagedefinitions deploy-pipeline
+deploy-all: build-ecr build-push-image deploy-ecs generate-imagedefinitions deploy-cloudformation
 	@echo "All services successfully deployed!"
