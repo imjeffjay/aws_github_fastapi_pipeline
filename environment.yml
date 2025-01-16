@@ -15,10 +15,11 @@ channels:
   - defaults
 dependencies:
   - python=3.9
-  - fastapi
-  - uvicorn
+  - fastapi=0.95.0
+  - uvicorn=0.21.1
   - pip
   - bottleneck
+  - pydantic=1.10.5
   - pip:
       - uvicorn
       - numpy==1.23.5
