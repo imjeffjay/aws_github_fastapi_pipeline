@@ -5,7 +5,7 @@ TEMPLATE_DIR = cloudformation
 PIPELINE_TEMPLATE = $(TEMPLATE_DIR)/pipeline-template.yaml
 STACK_NAME = FastAPIPipelineStack
 AWS_REGION = us-east-1
-SAMPLE_PIPELINE_PROJECT_ENV = sample_pipeline_project_env
+SAMPLE_PIPELINE_PROJECT_ENV = sample_pipeline_project_env #aws secrets name
 TASK_FAMILY = fastapi-task
 CONTAINER_NAME = fastapi-container
 PROJECT_NAME = FastAPIBuildProject
@@ -39,7 +39,6 @@ debug-config:
 	@echo "AWS_ACCOUNT_ID: $(AWS_ACCOUNT_ID)"
 	@echo "GITHUB_OAUTH_TOKEN: $(GITHUB_OAUTH_TOKEN)"
 	@echo "DOCKER_IMAGE: $(DOCKER_IMAGE)"
-	@echo "DUMMY_IMAGE: $(DUMMY_IMAGE)"
 	@echo "VPC_ID: $(VPC_ID)"
 	@echo "SUBNET_IDS: $(SUBNET_IDS)"
 
@@ -47,6 +46,11 @@ validate-template:
 	@echo "Validating CloudFormation template..."
 	aws cloudformation validate-template --template-body file://$(PIPELINE_TEMPLATE) || exit 1
 	@echo "Template validation successful!"
+
+
+run-local:
+	@echo "Running FastAPI locally..."
+	uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 # ====================
 # Workflow

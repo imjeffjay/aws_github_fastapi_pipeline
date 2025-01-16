@@ -1,0 +1,61 @@
+# How to run: "make -f Makefile.local run"
+
+# ====================
+# Variables
+# ====================
+# Load environment variables from .env
+include .env
+export $(shell sed 's/=.*//' .env)
+
+VENV_DIR = venv
+CONDA_ENV = basic_python
+PYTHON = python
+UVICORN = uvicorn
+PIP = $(VENV_DIR)/Scripts/pip
+PYTHON_BIN = $(VENV_DIR)/Scripts/python
+
+# ====================
+# Help Command
+# ====================
+help:
+	@echo "Available commands:"
+	@echo "  make conda-setup   - Create Conda environment"
+	@echo "  make pip-setup     - Create Pip virtual environment"
+	@echo "  make run-conda     - Run the main script using Conda"
+	@echo "  make aws-setup     - Set up AWS resources (ECR, ECS, CodePipeline)"
+	@echo "  make clean         - Remove environments and cleanup temporary files"
+
+# ====================
+# Environment Setup
+# ====================
+# Create Conda Environment
+conda-setup:
+	@echo "Removing existing Conda environment (if it exists)..."
+	conda env remove -n basic_python -y || true
+	@echo "Creating Conda environment from environment.yml..."
+	conda env create -f environment.yml
+
+# Create venv Environment
+pip-setup:
+	$(PYTHON) -m venv $(VENV_DIR)
+	$(PIP) install -r requirements.txt
+
+# ====================
+# Running the App
+# ====================
+# Run Using Conda
+run-conda:
+	@echo "Activating Conda environment and starting the app..."
+	conda run -n $(CONDA_ENV) $(UVICORN) main:app --host 0.0.0.0 --port 8000 &
+
+# Run Using venv
+run-venv: pip-setup
+	$(PYTHON_BIN) main.py
+
+# ====================
+# Cleanup Commands
+# ====================
+clean:
+	rm -rf $(VENV_DIR)
+	conda env remove -n basic_python -y || true
+
