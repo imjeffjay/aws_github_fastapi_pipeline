@@ -122,19 +122,20 @@ Resources:
 
   # CodeBuild Project
   CodeBuildProject:
-    Type: "AWS::CodeBuild::Project"
+    Type: AWS::CodeBuild::Project
     Properties:
       Name: !Ref ProjectName
       Source:
-        Type: "GITHUB"
+        Type: GITHUB
         Location: !Sub "https://github.com/${GitHubOwner}/${GitHubRepo}.git"
       Environment:
-        ComputeType: "BUILD_GENERAL1_SMALL"
-        Image: "aws/codebuild/standard:5.0"
-        Type: "LINUX_CONTAINER"
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0 # Includes Docker support
+        PrivilegedMode: true # Required for Docker builds
+        Type: LINUX_CONTAINER
       ServiceRole: !GetAtt CodePipelineRole.Arn
       Artifacts:
-        Type: "NO_ARTIFACTS"
+        Type: NO_ARTIFACTS
 
   # CodePipeline
   CodePipeline:

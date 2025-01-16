@@ -1,0 +1,30 @@
+# Conda Environment Setup Instructions
+#  - Using an environment.yml file with conda
+#  - Key Terminal Commands:
+#
+#    conda env create -f environment.yml
+#    conda env update --file environment.yml --prune
+#    conda env export --name basic_python > environment.yml
+#    conda env remove --name basic_python
+#    conda env list
+
+name: basic_python
+channels:
+  - anaconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - fastapi
+  - uvicorn
+  - pip
+  - bottleneck
+  - pip:
+      - uvicorn
+      - numpy==1.23.5
+      - pandas==1.5.2
+      - ipykernel==6.17.1
+      - ipython==8.7.0
+      - jupyter-client==7.4.7
+      - jupyter-core==5.1.0
+      - matplotlib==3.6.2

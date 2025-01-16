@@ -22,7 +22,6 @@ IMAGEDef_FILE = $(CONFIG_DIR)/imagedefinitions.json
 AWS_ACCOUNT_ID = $(shell aws sts get-caller-identity --query Account --output text)
 GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GITHUB_OAUTH_TOKEN')
 DOCKER_IMAGE = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):$(IMAGE_TAG)
-DUMMY_IMAGE = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):dummy
 
 # Fetch default VPC ID
 VPC_ID = $(shell aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query "Vpcs[0].VpcId" --output text)
@@ -42,12 +41,40 @@ debug-config:
 	@echo "VPC_ID: $(VPC_ID)"
 	@echo "SUBNET_IDS: $(SUBNET_IDS)"
 
+validate-template:
+	@echo "Validating CloudFormation template..."
+	aws cloudformation validate-template --template-body file://$(PIPELINE_TEMPLATE) || exit 1
+	@echo "Template validation successful!"
+
 # ====================
 # Workflow
 # ====================
 
+create-ecr:
+	@echo "Creating ECR repository: $(ECR_REPO_NAME)..."
+	aws ecr create-repository --repository-name $(ECR_REPO_NAME) || echo "ECR repository $(ECR_REPO_NAME) already exists."
+
+# Build IAM Role
+build-iam-role:
+	@echo "Building IAM roles for CodePipeline..."
+	# Add specific commands for IAM role creation if required.
+
+# Push Dummy Docker Image
+build-push-image:
+	@echo "Building Docker image for $(ECR_REPO_NAME)..."
+	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
+	docker build -t $(ECR_REPO_NAME):latest .
+	docker tag $(ECR_REPO_NAME):latest $(DOCKER_IMAGE)
+	docker push $(DOCKER_IMAGE)
+
+# Generate imagedefinitions.json
+generate-imagedefinitions:
+	@echo "Generating imagedefinitions.json for $(CONTAINER_NAME)..."
+	@echo '[{"name": "$(CONTAINER_NAME)", "imageUri": "$(DOCKER_IMAGE)"}]' > $(IMAGEDef_FILE)
+	@cat $(IMAGEDef_FILE)
+
 # Deploy ECS and ECR infrastructure
-deploy-ecr-ecs:
+deploy-ecr-ecs: validate-template
 	@echo "Deploying ECS and ECR infrastructure..."
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
@@ -56,31 +83,14 @@ deploy-ecr-ecs:
 			RepositoryName=$(ECR_REPO_NAME) \
 			AWSRegion=$(AWS_REGION) \
 			TaskFamily=$(TASK_FAMILY) \
-			ClusterName=FastAPICluster \
+			ClusterName=$(CLUSTER_NAME) \
 			SubnetIds=$(SUBNET_IDS) \
 			GitHubOwner=$(GITHUB_OWNER) \
 			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
 			GitHubRepo=$(GITHUB_REPO) \
-		--capabilities CAPABILITY_NAMED_IAM
+		--capabilities CAPABILITY_NAMED_IAM || exit 1
+	@echo "ECS and ECR deployment complete!"
 
-# Build IAM Role
-build-iam-role:
-	@echo "Building IAM roles for CodePipeline..."
-	# Add specific commands for IAM role creation if required.
-
-# Push Dummy Docker Image
-push-dummy-image:
-	@echo "Building and pushing a dummy Docker image..."
-	docker build -t $(ECR_REPO_NAME) .
-	docker tag $(ECR_REPO_NAME):dummy $(DUMMY_IMAGE)
-	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
-	docker push $(DUMMY_IMAGE)
-
-# Generate imagedefinitions.json
-generate-imagedefinitions:
-	@echo "Generating imagedefinitions.json with dummy image..."
-	@echo '[{"name": "$(CONTAINER_NAME)", "imageUri": "$(DUMMY_IMAGE)"}]' > $(IMAGEDef_FILE)
-	@cat $(IMAGEDef_FILE)
 
 # Deploy CodePipeline
 deploy-pipeline:
