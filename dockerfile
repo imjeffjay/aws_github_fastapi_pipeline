@@ -4,21 +4,20 @@ FROM python:3.10-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy only the dependency file first (to leverage Docker cache)
-COPY requirements.txt /app/
-
-# Install dependencies globally
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the rest of the application
+# Copy project files to the container
 COPY . /app
 
-# Environment variables to optimize Python runtime
+# Install dependencies
+RUN python -m venv venv && \
+    . venv/bin/activate && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Environment variable for Python (e.g., disable .pyc file creation)
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Expose the application port (optional, but recommended for clarity)
 EXPOSE 8000
 
-# Command to run the application (parameterized for flexibility)
-CMD ["python", "src/main.py"]
+# Command to run the main script
+CMD ["venv/bin/python", "main.py"]
