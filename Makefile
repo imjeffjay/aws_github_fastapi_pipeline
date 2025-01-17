@@ -68,15 +68,12 @@ auth-ecr:
 	docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
 
 
-
-# Push Docker Image
+# Trigger AWS CodeBuild to Build and Push Docker Image
 build-push-image:
-	@echo "Building Docker image for $(ECR_REPO_NAME)..."
-	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
-	docker build -t $(ECR_REPO_NAME):latest .
-	docker tag $(ECR_REPO_NAME):latest $(DOCKER_IMAGE)
-	docker push $(DOCKER_IMAGE)
-
+	@echo "Triggering AWS CodeBuild to build and push Docker image for $(PROJECT_NAME)..."
+	aws codebuild start-build \
+		--project-name $(PROJECT_NAME) \
+		--region $(AWS_REGION)
 
 
 # Deploy ECS Resources (Cluster, Task Definition, Service):
