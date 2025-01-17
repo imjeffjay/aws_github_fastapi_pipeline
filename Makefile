@@ -67,14 +67,25 @@ auth-ecr:
 	aws ecr get-login-password --region $(AWS_REGION) | \
 	docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
 
+create-codebuild-project:
+	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
+	aws codebuild create-project \
+		--name $(PROJECT_NAME) \
+		--source type=GITHUB,location=https://github.com/$(GITHUB_OWNER)/$(GITHUB_REPO).git \
+		--artifacts type=NO_ARTIFACTS \
+		--environment type=LINUX_CONTAINER,image=aws/codebuild/standard:5.0,computeType=BUILD_GENERAL1_SMALL,privilegedMode=true \
+		--service-role arn:aws:iam::$(AWS_ACCOUNT_ID):role/CodeBuildServiceRole
+	@echo "CodeBuild project created successfully!"
 
-# Trigger AWS CodeBuild to Build and Push Docker Image
+# Trigger CodeBuild to build and push Docker image
 build-push-image:
-	@echo "Triggering AWS CodeBuild to build and push Docker image for $(PROJECT_NAME)..."
+	@echo "Triggering CodeBuild to build and push Docker image..."
 	aws codebuild start-build \
 		--project-name $(PROJECT_NAME) \
-		--region $(AWS_REGION)
-
+		--environment-variables-override \
+			name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT \
+			name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT \
+			name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT
 
 # Deploy ECS Resources (Cluster, Task Definition, Service):
 deploy-ecs:
@@ -125,5 +136,5 @@ deploy-cloudformation:
 # ====================
 
 # All-in-One Deployment
-deploy-all: build-ecr build-push-image deploy-ecs generate-imagedefinitions deploy-cloudformation
+deploy-all: build-ecr create-codebuild-project build-push-image deploy-ecs generate-imagedefinitions deploy-cloudformation
 	@echo "All services successfully deployed!"
