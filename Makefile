@@ -84,7 +84,7 @@ auth-ecr:
 
 # Build IAM Role
 build-iam-role:
-	@echo "Deploying IAM roles for CodePipeline and CodeBuild from pipeline template..."
+	@echo "Starting IAM role deployment..."
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
 		--stack-name $(IAM_STACK_NAME) \
