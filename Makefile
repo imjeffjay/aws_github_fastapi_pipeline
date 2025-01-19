@@ -102,6 +102,7 @@ build-iam-role:
 			ProjectName=$(PROJECT_NAME)
 	@echo "IAM roles deployed successfully!"
 
+
 create-codebuild-project:
 	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
 	aws codebuild create-project \
@@ -148,18 +149,18 @@ deploy-cloudformation:
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
 		--stack-name $(STACK_NAME) \
-    --parameter-overrides \
-        GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
-        GitHubOwner=$(GITHUB_OWNER) \
-        GitHubRepo=$(GITHUB_REPO) \
-        AWSRegion=$(AWS_REGION) \
-        RepositoryName=$(ECR_REPO_NAME) \
-        ClusterName=$(CLUSTER_NAME) \
-        TaskFamily=$(TASK_FAMILY) \
-        ContainerName=$(CONTAINER_NAME) \
-        SubnetIds=$(SUBNET_IDS) \
-        ProjectName=$(PROJECT_NAME) \
-    --capabilities CAPABILITY_NAMED_IAM
+		--parameter-overrides \
+			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
+			GitHubOwner=$(GITHUB_OWNER) \
+			GitHubRepo=$(GITHUB_REPO) \
+			AWSRegion=$(AWS_REGION) \
+			RepositoryName=$(ECR_REPO_NAME) \
+			ClusterName=$(CLUSTER_NAME) \
+			TaskFamily=$(TASK_FAMILY) \
+			ContainerName=$(CONTAINER_NAME) \
+			SubnetIds=$(SUBNET_IDS) \
+			ProjectName=$(PROJECT_NAME) \
+		--capabilities CAPABILITY_NAMED_IAM
 
 # ====================
 # Combined Workflow
