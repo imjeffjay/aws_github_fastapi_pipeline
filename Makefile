@@ -37,12 +37,12 @@ SUBNET_IDS = $(shell aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(VP
 # ====================
 
 validate-setup:
-    @echo "Validating setup variables..."
-    @echo "GITHUB_OWNER: $(GITHUB_OWNER)"
-    @echo "GITHUB_REPO: $(GITHUB_REPO)"
-    @echo "AWS_ACCOUNT_ID: $(AWS_ACCOUNT_ID)"
-    @echo "DOCKER_IMAGE: $(DOCKER_IMAGE)"
-    @echo "Validation completed!"
+	@echo "Validating setup variables..."
+	@echo "GITHUB_OWNER: $(GITHUB_OWNER)"
+	@echo "GITHUB_REPO: $(GITHUB_REPO)"
+	@echo "AWS_ACCOUNT_ID: $(AWS_ACCOUNT_ID)"
+	@echo "DOCKER_IMAGE: $(DOCKER_IMAGE)"
+	@echo "Validation completed!"
 
 check-resources:
     @echo "Checking required AWS resources..."
