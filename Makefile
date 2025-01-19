@@ -83,11 +83,7 @@ auth-ecr:
 	docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
 
 # Build IAM Role
-
 build-iam-role:
-	@echo "This is a test."
-
-build-iam-role_2:
 	@echo "Starting IAM role deployment..."
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
