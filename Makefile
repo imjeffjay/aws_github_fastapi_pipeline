@@ -45,10 +45,10 @@ validate-setup:
 	@echo "Validation completed!"
 
 check-resources:
-    @echo "Checking required AWS resources..."
-    aws ecr describe-repositories --repository-names $(ECR_REPO_NAME) || echo "ECR repository $(ECR_REPO_NAME) does not exist."
-    aws iam get-role --role-name CodeBuildServiceRole || echo "IAM role CodeBuildServiceRole does not exist."
-    @echo "Resources check completed."
+	@echo "Checking required AWS resources..."
+	aws ecr describe-repositories --repository-names $(ECR_REPO_NAME) || echo "ECR repository $(ECR_REPO_NAME) does not exist."
+	aws iam get-role --role-name CodeBuildServiceRole || echo "IAM role CodeBuildServiceRole does not exist."
+	@echo "Resources check completed."
 
 debug-config:
 	@echo "AWS_ACCOUNT_ID: $(AWS_ACCOUNT_ID)"
@@ -168,5 +168,5 @@ deploy-cloudformation:
 
 # All-in-One Deployment
 deploy-all: check-resources build-iam-role build-ecr create-codebuild-project build-push-image deploy-cloudformation deploy-ecs
-    @echo "All services successfully deployed!"
+	@echo "All services successfully deployed!"
 
