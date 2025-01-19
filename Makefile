@@ -8,6 +8,7 @@ AWS_REGION = us-east-1
 SAMPLE_PIPELINE_PROJECT_ENV = sample_pipeline_project_env #aws secrets name
 TASK_FAMILY = fastapi-task
 CONTAINER_NAME = fastapi-container
+IAM_STACK_NAME = FastAPI-IAMStack
 PROJECT_NAME = FastAPIBuildProject
 ECR_REPO_NAME = fastapi-app
 IMAGE_TAG = latest
@@ -34,6 +35,20 @@ SUBNET_IDS = $(shell aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(VP
 # ====================
 # Debugging Commands
 # ====================
+
+validate-setup:
+    @echo "Validating setup variables..."
+    @echo "GITHUB_OWNER: $(GITHUB_OWNER)"
+    @echo "GITHUB_REPO: $(GITHUB_REPO)"
+    @echo "AWS_ACCOUNT_ID: $(AWS_ACCOUNT_ID)"
+    @echo "DOCKER_IMAGE: $(DOCKER_IMAGE)"
+    @echo "Validation completed!"
+
+check-resources:
+    @echo "Checking required AWS resources..."
+    aws ecr describe-repositories --repository-names $(ECR_REPO_NAME) || echo "ECR repository $(ECR_REPO_NAME) does not exist."
+    aws iam get-role --role-name CodeBuildServiceRole || echo "IAM role CodeBuildServiceRole does not exist."
+    @echo "Resources check completed."
 
 debug-config:
 	@echo "AWS_ACCOUNT_ID: $(AWS_ACCOUNT_ID)"
@@ -66,6 +81,26 @@ auth-ecr:
 	@echo "Authenticating Docker with ECR..."
 	aws ecr get-login-password --region $(AWS_REGION) | \
 	docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
+
+# Build IAM Role
+build-iam-role:
+	@echo "Deploying IAM roles for CodePipeline and CodeBuild from pipeline template..."
+	aws cloudformation deploy \
+		--template-file $(PIPELINE_TEMPLATE) \
+		--stack-name $(IAM_STACK_NAME) \
+		--capabilities CAPABILITY_NAMED_IAM \
+		--parameter-overrides \
+			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
+			GitHubOwner=$(GITHUB_OWNER) \
+			GitHubRepo=$(GITHUB_REPO) \
+			AWSRegion=$(AWS_REGION) \
+			RepositoryName=$(ECR_REPO_NAME) \
+			ClusterName=$(CLUSTER_NAME) \
+			TaskFamily=$(TASK_FAMILY) \
+			ContainerName=$(CONTAINER_NAME) \
+			SubnetIds=$(SUBNET_IDS) \
+			ProjectName=$(PROJECT_NAME)
+	@echo "IAM roles deployed successfully!"
 
 create-codebuild-project:
 	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
@@ -106,12 +141,6 @@ generate-imagedefinitions:
 	@echo '[{"name": "$(CONTAINER_NAME)", "imageUri": "$(DOCKER_IMAGE)"}]' > $(IMAGEDef_FILE)
 	@cat $(IMAGEDef_FILE)
 
-# Build IAM Role
-build-iam-role:
-	@echo "Ensuring IAM roles for CodePipeline and CodeBuild..."
-	make deploy-cloudformation
-	@echo "IAM roles created as part of CloudFormation stack!"
-
 
 # Deploy CodePipeline
 deploy-cloudformation:
@@ -137,5 +166,6 @@ deploy-cloudformation:
 # ====================
 
 # All-in-One Deployment
-deploy-all: build-ecr create-codebuild-project build-push-image deploy-ecs generate-imagedefinitions deploy-cloudformation
-	@echo "All services successfully deployed!"
+deploy-all: check-resources build-iam-role build-ecr create-codebuild-project build-push-image deploy-cloudformation deploy-ecs
+    @echo "All services successfully deployed!"
+
