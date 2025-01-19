@@ -3,6 +3,7 @@
 # ====================
 TEMPLATE_DIR = cloudformation
 PIPELINE_TEMPLATE = $(TEMPLATE_DIR)/pipeline-template.yaml
+IAM_TEMPLATE = $(TEMPLATE_DIR)/iam-template.yaml
 STACK_NAME = FastAPIPipelineStack
 AWS_REGION = us-east-1
 SAMPLE_PIPELINE_PROJECT_ENV = sample_pipeline_project_env #aws secrets name
@@ -86,7 +87,7 @@ auth-ecr:
 build-iam-role:
 	@echo "Deploying IAM roles for CodePipeline and CodeBuild..."
 	aws cloudformation deploy \
-		--template-file cloudformation/iam-template.yaml \
+		--template-file $(IAM_TEMPLATE) \
 		--stack-name $(IAM_STACK_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM
 	@echo "IAM roles deployed successfully!"
