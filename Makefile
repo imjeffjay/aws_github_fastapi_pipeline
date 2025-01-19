@@ -108,8 +108,9 @@ generate-imagedefinitions:
 
 # Build IAM Role
 build-iam-role:
-	@echo "Building IAM roles for CodePipeline..."
-	# Add specific commands for IAM role creation if required.
+	@echo "Ensuring IAM roles for CodePipeline and CodeBuild..."
+	make deploy-cloudformation
+	@echo "IAM roles created as part of CloudFormation stack!"
 
 
 # Deploy CodePipeline
