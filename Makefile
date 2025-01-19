@@ -84,24 +84,12 @@ auth-ecr:
 
 # Build IAM Role
 build-iam-role:
-	@echo "Starting IAM role deployment..."
+	@echo "Deploying IAM roles for CodePipeline and CodeBuild..."
 	aws cloudformation deploy \
-		--template-file $(PIPELINE_TEMPLATE) \
+		--template-file cloudformation/iam-template.yaml \
 		--stack-name $(IAM_STACK_NAME) \
-		--capabilities CAPABILITY_NAMED_IAM \
-		--parameter-overrides \
-			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
-			GitHubOwner=$(GITHUB_OWNER) \
-			GitHubRepo=$(GITHUB_REPO) \
-			AWSRegion=$(AWS_REGION) \
-			RepositoryName=$(ECR_REPO_NAME) \
-			ClusterName=$(CLUSTER_NAME) \
-			TaskFamily=$(TASK_FAMILY) \
-			ContainerName=$(CONTAINER_NAME) \
-			SubnetIds=$(SUBNET_IDS) \
-			ProjectName=$(PROJECT_NAME)
+		--capabilities CAPABILITY_NAMED_IAM
 	@echo "IAM roles deployed successfully!"
-
 
 create-codebuild-project:
 	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
