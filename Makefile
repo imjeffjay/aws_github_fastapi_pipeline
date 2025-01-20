@@ -23,7 +23,11 @@ GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(A
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
 AWSSECRETS = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].Name" --output text)
-
+CONNECTION_ARN = $(shell aws cloudformation describe-stacks \
+	--stack-name $(IAM_STACK_NAME) \
+	--query "Stacks[0].Outputs[?OutputKey=='ConnectionArn'].OutputValue" \
+	--output text)
+	
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
 	--logical-resource-id CodePipelineRole \
@@ -63,20 +67,21 @@ auth-ecr:
 
 # Build IAM Role
 build-iam-role:
-	@echo "Deploying IAM roles for CodePipeline and CodeBuild..."
+	@echo "Deploying IAM roles and CodeStar Connection..."
 	aws cloudformation deploy \
 		--template-file $(IAM_TEMPLATE) \
 		--stack-name $(IAM_STACK_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--parameter-overrides \
-			AWSSECRETS=$(AWSSECRETS) 
+			AWSSECRETS=$(AWSSECRETS) \
+			GitHubConnectionName=GitHubConnection
 	@echo "IAM roles and CodeStar Connection deployed successfully!"
 
 create-codebuild-project:
 	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
 	aws codebuild create-project \
 		--name $(PROJECT_NAME) \
-		--source "{\"type\":\"CODESTAR\",\"auth\":{\"type\":\"OAUTH\"},\"location\":\"$(shell aws cloudformation describe-stack-resources --stack-name $(IAM_STACK_NAME) --logical-resource-id GitHubCodeStarConnection --query 'StackResources[0].PhysicalResourceId' --output text)\"}" \
+		--source "{\"type\":\"CODESTAR\",\"auth\":{\"type\":\"OAUTH\"},\"location\":\"$(CONNECTION_ARN)\"}" \
 		--artifacts type=NO_ARTIFACTS \
 		--service-role $(IAM_ROLE) \
 		--environment "{\"type\":\"LINUX_CONTAINER\",\"image\":\"aws/codebuild/standard:5.0\",\"computeType\":\"BUILD_GENERAL1_SMALL\",\"privilegedMode\":true,\"environmentVariables\":[]}"

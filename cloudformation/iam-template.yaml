@@ -5,9 +5,10 @@ Parameters:
   AWSSECRETS:
     Type: String
     Description: "Name of the AWS Secrets Manager resource"
-  ConnectionArn:
+  GitHubConnectionName:
     Type: String
-    Description: "ARN of the CodeStar connection"
+    Default: "GitHubConnection"
+    Description: "Name of the CodeStar Connection"
 
 Resources:
 
@@ -52,7 +53,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: "codestar-connections:UseConnection"
-                Resource: !GetAtt GitHubCodeStarConnection.ConnectionArn
+                Resource: !ref GitHubCodeStarConnection.ConnectionArn
 
 
     # CodeBuild Service Role
@@ -71,3 +72,8 @@ Resources:
         - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
         - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
         - "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess"
+
+Outputs:
+  ConnectionArn:
+    Description: "The ARN of the CodeStar Connection"
+    Value: !GetAtt GitHubCodeStarConnection.ConnectionArn
