@@ -16,6 +16,13 @@ Resources:
       ProviderType: "GitHub"
 
   # IAM Role for CodePipeline
+Resources:
+  GitHubCodeStarConnection:
+    Type: "AWS::CodeStarConnections::Connection"
+    Properties:
+      ConnectionName: GitHubConnection
+      ProviderType: "GitHub"
+  
   CodePipelineRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -51,6 +58,7 @@ Resources:
               - Effect: Allow
                 Action: "codestar-connections:UseConnection"
                 Resource: !GetAtt GitHubCodeStarConnection.ConnectionArn
+
 
     # CodeBuild Service Role
   CodeBuildServiceRole:

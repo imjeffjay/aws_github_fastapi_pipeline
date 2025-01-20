@@ -22,7 +22,11 @@ CLUSTER_NAME = FastAPICluster # Define the cluster name here
 GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOAuthToken')
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
-CONNECTION_ARN = $(shell aws codestar-connections list-connections --query "Connections[?ConnectionStatus=='AVAILABLE'].[ConnectionArn]" --output text)
+CONNECTION_ARN = $(shell aws cloudformation describe-stack-resources \
+   --stack-name $(IAM_STACK_NAME) \
+   --logical-resource-id GitHubCodeStarConnection \
+   --query "StackResources[0].PhysicalResourceId" \
+   --output text)
 AWSSECRETS = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].Name" --output text)
 
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
@@ -67,7 +71,7 @@ create-codestar-connection:
 	@echo "Creating CodeStar Connection..."
 	aws codestar-connections create-connection \
 		--provider-type GitHub \
-		--connection-name GitHubConnection
+		--connection-name GitHubConnection || echo "CodeStar Connection already exists."
 	@echo "CodeStar Connection created successfully!"
 
 # Build IAM Role
