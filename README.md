@@ -33,3 +33,4 @@ git pull origin main
 make build-ecr
 make build-iam-role
 make create-codestar-connection
+make create-codebuild-project

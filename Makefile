@@ -85,12 +85,11 @@ create-codebuild-project:
 	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
 	aws codebuild create-project \
 		--name $(PROJECT_NAME) \
-		--source "type=CODESTAR,auth={type=OAUTH},location=$(CONNECTION_ARN)" \
+		--source "{\"type\": \"CODESTAR\", \"auth\": {\"type\": \"OAUTH\"}, \"location\": \"$(CONNECTION_ARN)\"}" \
 		--artifacts type=NO_ARTIFACTS \
 		--service-role $(IAM_ROLE) \
 		--environment "{\"type\":\"LINUX_CONTAINER\",\"image\":\"aws/codebuild/standard:5.0\",\"computeType\":\"BUILD_GENERAL1_SMALL\",\"privilegedMode\":true,\"environmentVariables\":[]}"
 	@echo "CodeBuild project created successfully!"
-
 
 # Trigger CodeBuild to build and push Docker image
 build-push-image:
