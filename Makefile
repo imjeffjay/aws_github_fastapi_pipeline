@@ -23,6 +23,7 @@ CLUSTER_NAME = FastAPICluster # Define the cluster name here
 GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOAuthToken')
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
+CONNECTION_ID = $(shell aws codestar-connections list-connections --query "Connections[0].ConnectionArn" --output text | awk -F'/' '{print $2}')
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
 	--logical-resource-id CodePipelineRole \
@@ -97,16 +98,8 @@ build-iam-role:
 		--capabilities CAPABILITY_NAMED_IAM \
 		--parameter-overrides \
 			AWSSECRETS=$(AWSSECRETS) \
-			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
-			GitHubOwner=$(GITHUB_OWNER) \
-			GitHubRepo=$(GITHUB_REPO) \
-			AWSRegion=$(AWS_REGION) \
-			RepositoryName=$(ECR_REPO_NAME) \
-			ClusterName=$(CLUSTER_NAME) \
-			TaskFamily=$(TASK_FAMILY) \
-			ContainerName=$(CONTAINER_NAME) \
-			SubnetIds=$(SUBNET_IDS) \
-			ProjectName=$(PROJECT_NAME)
+			ConnectionId=$(CONNECTION_ID)
+	@echo "IAM roles deployed successfully!"
 
 create-codebuild-project:
 	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
