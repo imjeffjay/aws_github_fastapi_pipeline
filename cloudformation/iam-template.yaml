@@ -60,7 +60,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: "codestar-connections:UseConnection"
-                Resource: !GetAtt GitHubCodeStarConnection.ConnectionArn
+                Resource: !Ref ConnectionArn
 
 
     # CodeBuild Service Role
