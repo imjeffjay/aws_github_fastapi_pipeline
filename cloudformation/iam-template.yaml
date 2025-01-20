@@ -36,6 +36,10 @@ Resources:
                   - "secretsmanager:GetSecretValue"
                   - "secretsmanager:DescribeSecret"
                 Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret/${AWSSECRETS}*"
+        - PolicyName: AllowCodeStarConnection
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
               - Effect: Allow
                 Action: "codestar-connections:UseConnection"
                 Resource: !GetAtt GitHubCodeStarConnection.ConnectionArn

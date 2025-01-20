@@ -6,7 +6,6 @@ PIPELINE_TEMPLATE = $(TEMPLATE_DIR)/pipeline-template.yaml
 IAM_TEMPLATE = $(TEMPLATE_DIR)/iam-template.yaml
 STACK_NAME = FastAPIPipelineStack
 AWS_REGION = us-east-1
-AWSSECRETS = awspipeline #aws secrets name
 TASK_FAMILY = fastapi-task
 CONTAINER_NAME = fastapi-container
 IAM_STACK_NAME = FastAPI-IAMStack
@@ -24,6 +23,7 @@ GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(A
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
 CONNECTION_ARN = $(shell aws codestar-connections list-connections --query "Connections[?ConnectionStatus=='AVAILABLE'].[ConnectionArn]" --output text)
+AWSSECRETS = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].Name" --output text)
 
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
@@ -79,6 +79,7 @@ build-iam-role:
 		--capabilities CAPABILITY_NAMED_IAM \
 		--parameter-overrides \
 			AWSSECRETS=$(AWSSECRETS)
+			ConnectionArn=$(CONNECTION_ARN)
 	@echo "IAM roles and CodeStar Connection deployed successfully!"
 
 create-codebuild-project:

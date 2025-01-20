@@ -31,6 +31,6 @@ cd aws_pipeline_setup
 git pull origin main
 
 make build-ecr
-make build-iam-role
 make create-codestar-connection
+make build-iam-role
 make create-codebuild-project
