@@ -82,6 +82,43 @@ Resources:
           Cpu: 256
           PortMappings:
             - ContainerPort: 8000
+            
+  CodePipelineRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+                - "codepipeline.amazonaws.com"
+                - "codebuild.amazonaws.com"
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        - "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess"
+        - "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
+        - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+      Policies:
+        - PolicyName: AllowCustomPolicies
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "secretsmanager:GetSecretValue"
+                  - "secretsmanager:DescribeSecret"
+                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret/${AWSSECRETS}*"
+        - PolicyName: AllowCodeStarConnection
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: "codestar-connections:UseConnection"
+                Resource: !GetAtt GitHubCodeStarConnection.ConnectionArn
+
 
   ECSExecutionRole:
     Type: "AWS::IAM::Role"

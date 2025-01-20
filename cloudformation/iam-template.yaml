@@ -7,6 +7,14 @@ Parameters:
     Description: "Name of the AWS Secrets Manager resource"
 
 Resources:
+
+  # CodeStar Connection 
+  GitHubCodeStarConnection:
+    Type: "AWS::CodeStarConnections::Connection"
+    Properties:
+      ConnectionName: GitHubConnection
+      ProviderType: "GitHub"
+
   # IAM Role for CodePipeline
   CodePipelineRole:
     Type: "AWS::IAM::Role"
@@ -16,7 +24,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: 
+              Service:
                 - "codepipeline.amazonaws.com"
                 - "codebuild.amazonaws.com"
             Action: "sts:AssumeRole"
@@ -43,13 +51,6 @@ Resources:
               - Effect: Allow
                 Action: "codestar-connections:UseConnection"
                 Resource: !GetAtt GitHubCodeStarConnection.ConnectionArn
-
-    # CodeStar Connection 
-  GitHubCodeStarConnection:
-    Type: "AWS::CodeStarConnections::Connection"
-    Properties:
-      ConnectionName: "GitHubConnection"
-      ProviderType: "GitHub"
 
     # CodeBuild Service Role
   CodeBuildServiceRole:
