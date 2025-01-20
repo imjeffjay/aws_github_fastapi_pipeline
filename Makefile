@@ -57,6 +57,7 @@ SUBNET_IDS = $(shell aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(VP
 build-ecr:
 	@echo "Creating ECR repository: $(ECR_REPO_NAME)..."
 	aws ecr create-repository --repository-name $(ECR_REPO_NAME) || echo "ECR repository $(ECR_REPO_NAME) already exists."
+	@echo "Repo created successfully!"
 
 # Authenticate Docker with ECR
 auth-ecr:

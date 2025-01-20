@@ -116,12 +116,12 @@ Resources:
     Properties:
       Name: !Ref ProjectName
       Source:
-        Type: GITHUB
-        Location: !Sub "https://github.com/${GitHubOwner}/${GitHubRepo}.git"
+        Type: CODESTAR
+        Location: !GetAtt GitHubCodeStarConnection.ConnectionArn
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/standard:5.0 # Includes Docker support
-        PrivilegedMode: true # Required for Docker builds
+        Image: aws/codebuild/standard:5.0
+        PrivilegedMode: true
         Type: LINUX_CONTAINER
       ServiceRole: !GetAtt CodePipelineRole.Arn
       Artifacts:

@@ -27,8 +27,9 @@ aws iam delete-role --role-name CodePipelineRole
 git pull origin main
 make setup-all
 
-01/16/2025
+cd aws_pipeline_setup
+git pull origin main
 
-create-ecr
-build-push-image
-generate-imagedefinitions
+make build-ecr
+make build-iam-role
+make create-codestar-connection
