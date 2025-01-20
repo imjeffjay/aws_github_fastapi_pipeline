@@ -23,6 +23,11 @@ CLUSTER_NAME = FastAPICluster # Define the cluster name here
 GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GitHubOAuthToken')
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GitHubOwner')
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(SAMPLE_PIPELINE_PROJECT_ENV) --query SecretString --output text | jq -r '.GitHubRepo')
+IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
+	--stack-name $(IAM_STACK_NAME) \
+	--logical-resource-id CodePipelineRole \
+	--query "StackResources[0].PhysicalResourceId" \
+	--output text)
 
 AWS_ACCOUNT_ID = $(shell aws sts get-caller-identity --query Account --output text)
 DOCKER_IMAGE = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):$(IMAGE_TAG)
@@ -92,30 +97,14 @@ build-iam-role:
 		--capabilities CAPABILITY_NAMED_IAM
 	@echo "IAM roles deployed successfully!"
 
-create-codebuild-role:
-	@echo "Creating IAM role for CodeBuild..."
-	aws iam create-role \
-		--role-name CodeBuildServiceRole \
-		--assume-role-policy-document file://codebuild-trust-policy.json
-	aws iam attach-role-policy \
-		--role-name CodeBuildServiceRole \
-		--policy-arn arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
-	aws iam attach-role-policy \
-		--role-name CodeBuildServiceRole \
-		--policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
-	aws iam attach-role-policy \
-		--role-name CodeBuildServiceRole \
-		--policy-arn arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
-	@echo "CodeBuild IAM role created successfully!"
-
-create-codebuild-project: create-codebuild-role
+create-codebuild-project:
 	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
 	aws codebuild create-project \
 		--name $(PROJECT_NAME) \
 		--source type=GITHUB,location=https://github.com/$(GITHUB_OWNER)/$(GITHUB_REPO).git \
 		--artifacts type=NO_ARTIFACTS \
 		--environment type=LINUX_CONTAINER,image=aws/codebuild/standard:5.0,computeType=BUILD_GENERAL1_SMALL,privilegedMode=true \
-		--service-role arn:aws:iam::$(AWS_ACCOUNT_ID):role/CodeBuildServiceRole
+		--service-role $(IAM_ROLE)
 	@echo "CodeBuild project created successfully!"
 
 # Trigger CodeBuild to build and push Docker image
