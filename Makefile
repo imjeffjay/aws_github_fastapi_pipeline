@@ -96,7 +96,7 @@ build-iam-role:
 		--stack-name $(IAM_STACK_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--parameter-overrides \
-			AWSSECRETS=$(awspipeline) \
+			AWSSECRETS=$(AWSSECRETS) \
 			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
 			GitHubOwner=$(GITHUB_OWNER) \
 			GitHubRepo=$(GITHUB_REPO) \
@@ -127,6 +127,9 @@ build-push-image:
 			name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT \
 			name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT \
 			name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT
+			name=GITHUB_OAUTH_TOKEN,value=$(GITHUB_OAUTH_TOKEN),type=PLAINTEXT \
+			name=GITHUB_OWNER,value=$(GITHUB_OWNER),type=PLAINTEXT \
+			name=GITHUB_REPO,value=$(GITHUB_REPO),type=PLAINTEXT
 
 # Deploy ECS Resources (Cluster, Task Definition, Service):
 deploy-ecs:
@@ -172,6 +175,6 @@ deploy-cloudformation:
 # ====================
 
 # All-in-One Deployment
-deploy-all: check-resources build-iam-role build-ecr create-codebuild-role create-codebuild-project build-push-image deploy-cloudformation deploy-ecs
+deploy-all: check-resources build-iam-role build-ecr create-codebuild-project build-push-image deploy-cloudformation deploy-ecs
 	@echo "All services successfully deployed!"
 
