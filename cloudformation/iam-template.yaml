@@ -5,6 +5,9 @@ Parameters:
   AWSSECRETS:
     Type: String
     Description: "Name of the AWS Secrets Manager resource"
+  ConnectionArn:
+    Type: String
+    Description: "ARN of the CodeStar connection"
 
 Resources:
 
