@@ -62,14 +62,6 @@ auth-ecr:
 	aws ecr get-login-password --region $(AWS_REGION) | \
 	docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
 
-# CodeStar Creation
-create-codestar-connection:
-	@echo "Creating CodeStar Connection..."
-	aws codestar-connections create-connection \
-		--provider-type GitHub \
-		--connection-name GitHubConnection || echo "CodeStar Connection already exists."
-	@echo "CodeStar Connection created successfully!"
-
 # Build IAM Role
 build-iam-role:
 	@echo "Deploying IAM roles for CodePipeline and CodeBuild..."
