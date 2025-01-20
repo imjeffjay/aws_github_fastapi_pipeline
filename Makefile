@@ -92,7 +92,23 @@ build-iam-role:
 		--capabilities CAPABILITY_NAMED_IAM
 	@echo "IAM roles deployed successfully!"
 
-create-codebuild-project:
+create-codebuild-role:
+	@echo "Creating IAM role for CodeBuild..."
+	aws iam create-role \
+		--role-name CodeBuildServiceRole \
+		--assume-role-policy-document file://codebuild-trust-policy.json
+	aws iam attach-role-policy \
+		--role-name CodeBuildServiceRole \
+		--policy-arn arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
+	aws iam attach-role-policy \
+		--role-name CodeBuildServiceRole \
+		--policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
+	aws iam attach-role-policy \
+		--role-name CodeBuildServiceRole \
+		--policy-arn arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
+	@echo "CodeBuild IAM role created successfully!"
+
+create-codebuild-project: create-codebuild-role
 	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
 	aws codebuild create-project \
 		--name $(PROJECT_NAME) \
@@ -156,6 +172,6 @@ deploy-cloudformation:
 # ====================
 
 # All-in-One Deployment
-deploy-all: check-resources build-iam-role build-ecr create-codebuild-project build-push-image deploy-cloudformation deploy-ecs
+deploy-all: check-resources build-iam-role build-ecr create-codebuild-role create-codebuild-project build-push-image deploy-cloudformation deploy-ecs
 	@echo "All services successfully deployed!"
 
