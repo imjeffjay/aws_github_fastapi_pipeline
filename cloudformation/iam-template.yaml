@@ -4,7 +4,7 @@ Description: "IAM roles for CodePipeline and CodeBuild."
 Parameters:
   AWSSECRETS:
     Type: String
-    Description: "Secrets Manager name for pipeline environment variables"
+    Description: "Name of the AWS Secrets Manager resource"
 
 Resources:
   # IAM Role for CodePipeline
