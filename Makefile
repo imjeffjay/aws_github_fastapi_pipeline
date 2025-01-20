@@ -23,11 +23,8 @@ CLUSTER_NAME = FastAPICluster # Define the cluster name here
 GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOAuthToken')
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
-CONNECTION_ARN = $(shell aws cloudformation describe-stack-resources \
-	--stack-name $(IAM_STACK_NAME) \
-	--logical-resource-id GitHubCodeStarConnection \
-	--query "StackResources[0].PhysicalResourceId" \
-	--output text)
+CONNECTION_ARN = $(shell aws codestar-connections list-connections --query "Connections[?ConnectionStatus=='AVAILABLE'].[ConnectionArn]" --output text)
+
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
 	--logical-resource-id CodePipelineRole \
@@ -88,10 +85,11 @@ create-codebuild-project:
 	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
 	aws codebuild create-project \
 		--name $(PROJECT_NAME) \
-		--source type=CODESTAR,location=$(CONNECTION_ARN) \
+		--source "type=CODESTAR,auth={type=CODEBUILD},location=$(CONNECTION_ARN)" \
 		--artifacts type=NO_ARTIFACTS \
 		--service-role $(IAM_ROLE) \
-		--environment type=LINUX_CONTAINER,image=aws/codebuild/standard:5.0,computeType=BUILD_GENERAL1_SMALL,privilegedMode=true
+		--environment "{\"type\":\"LINUX_CONTAINER\",\"image\":\"aws/codebuild/standard:5.0\",\"computeType\":\"BUILD_GENERAL1_SMALL\",\"privilegedMode\":true,\"environmentVariables\":[]}" \
+		--buildspec "buildspec.yml"
 	@echo "CodeBuild project created successfully!"
 
 
