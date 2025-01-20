@@ -23,7 +23,11 @@ CLUSTER_NAME = FastAPICluster # Define the cluster name here
 GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOAuthToken')
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
-CONNECTION_ID = $(shell aws codestar-connections list-connections --query "Connections[0].ConnectionArn" --output text | awk -F'/' '{print $2}')
+CONNECTION_ARN = $(shell aws cloudformation describe-stack-resources \
+	--stack-name $(IAM_STACK_NAME) \
+	--logical-resource-id GitHubCodeStarConnection \
+	--query "StackResources[0].PhysicalResourceId" \
+	--output text)
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
 	--logical-resource-id CodePipelineRole \
@@ -43,36 +47,7 @@ SUBNET_IDS = $(shell aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(VP
 # Debugging Commands
 # ====================
 
-validate-setup:
-	@echo "Validating setup variables..."
-	@echo "GITHUB_OWNER: $(GITHUB_OWNER)"
-	@echo "GITHUB_REPO: $(GITHUB_REPO)"
-	@echo "AWS_ACCOUNT_ID: $(AWS_ACCOUNT_ID)"
-	@echo "DOCKER_IMAGE: $(DOCKER_IMAGE)"
-	@echo "Validation completed!"
 
-check-resources:
-	@echo "Checking required AWS resources..."
-	aws ecr describe-repositories --repository-names $(ECR_REPO_NAME) || echo "ECR repository $(ECR_REPO_NAME) does not exist."
-	aws iam get-role --role-name CodeBuildServiceRole || echo "IAM role CodeBuildServiceRole does not exist."
-	@echo "Resources check completed."
-
-debug-config:
-	@echo "AWS_ACCOUNT_ID: $(AWS_ACCOUNT_ID)"
-	@echo "GITHUB_OAUTH_TOKEN: $(GITHUB_OAUTH_TOKEN)"
-	@echo "DOCKER_IMAGE: $(DOCKER_IMAGE)"
-	@echo "VPC_ID: $(VPC_ID)"
-	@echo "SUBNET_IDS: $(SUBNET_IDS)"
-
-validate-template:
-	@echo "Validating CloudFormation template..."
-	aws cloudformation validate-template --template-body file://$(PIPELINE_TEMPLATE) || exit 1
-	@echo "Template validation successful!"
-
-
-run-local:
-	@echo "Running FastAPI locally..."
-	uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 # ====================
 # Workflow
@@ -89,6 +64,14 @@ auth-ecr:
 	aws ecr get-login-password --region $(AWS_REGION) | \
 	docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
 
+# CodeStar Creation
+create-codestar-connection:
+	@echo "Creating CodeStar Connection..."
+	aws codestar-connections create-connection \
+		--provider-type GitHub \
+		--connection-name GitHubConnection
+	@echo "CodeStar Connection created successfully!"
+
 # Build IAM Role
 build-iam-role:
 	@echo "Deploying IAM roles for CodePipeline and CodeBuild..."
@@ -97,15 +80,14 @@ build-iam-role:
 		--stack-name $(IAM_STACK_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--parameter-overrides \
-			AWSSECRETS=$(AWSSECRETS) \
-			ConnectionId=$(CONNECTION_ID)
-	@echo "IAM roles deployed successfully!"
+			AWSSECRETS=$(AWSSECRETS)
+	@echo "IAM roles and CodeStar Connection deployed successfully!"
 
 create-codebuild-project:
 	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
 	aws codebuild create-project \
 		--name $(PROJECT_NAME) \
-		--source type=GITHUB,location=https://github.com/$(GITHUB_OWNER)/$(GITHUB_REPO).git \
+		--source type=CODESTAR,location=$(CONNECTION_ARN) \
 		--artifacts type=NO_ARTIFACTS \
 		--service-role $(IAM_ROLE) \
 		--environment type=LINUX_CONTAINER,image=aws/codebuild/standard:5.0,computeType=BUILD_GENERAL1_SMALL,privilegedMode=true
@@ -162,6 +144,6 @@ deploy-cloudformation:
 # ====================
 
 # All-in-One Deployment
-deploy-all: check-resources build-iam-role build-ecr create-codebuild-project build-push-image deploy-cloudformation deploy-ecs
+deploy-all: build-iam-role build-ecr create-codebuild-project build-push-image deploy-cloudformation deploy-ecs
 	@echo "All services successfully deployed!"
 

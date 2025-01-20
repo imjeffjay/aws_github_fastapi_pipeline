@@ -2,9 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: "CloudFormation template for FastAPI ECS pipeline setup with CodePipeline and CodeBuild."
 
 Parameters:
-  GitHubOAuthToken:
-    Type: String
-    Description: "GitHub OAuth token for accessing the repository"
   GitHubOwner:
     Type: String
     Description: "GitHub repository owner"
@@ -38,11 +35,22 @@ Parameters:
     Type: String
     Default: "FastAPIBuildProject"
     Description: "CodeBuild Project Name"
+  ConnectionArn:
+    Type: String
+    Description: "CodeStar Connection ARN for GitHub integration"
 
 Conditions:
   ECRNotExists: !Equals [!Ref RepositoryName, ""]
 
 Resources:
+
+  # Github connection  
+  GitHubConnection:
+  Type: AWS::CodeStarConnections::Connection
+  Properties:
+    ConnectionName: GitHubConnection
+    ProviderType: GitHub
+
   # ECR Repository
   ECRRepository:
     Condition: ECRNotExists
@@ -101,24 +109,6 @@ Resources:
           Subnets: !Ref SubnetIds
           AssignPublicIp: "ENABLED"
 
-  # IAM Role for CodePipeline
-  CodePipelineRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: 
-                - "codepipeline.amazonaws.com"
-                - "codebuild.amazonaws.com"
-            Action: "sts:AssumeRole"
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
-        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-        - "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess"
-        - "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
 
   # CodeBuild Project
   CodeBuildProject:
@@ -151,14 +141,13 @@ CodePipeline:
           - Name: "Source"
             ActionTypeId:
               Category: "Source"
-              Owner: "ThirdParty"
-              Provider: "GitHub"
+              Owner: AWS
+              Provider: CodeStarSourceConnection
               Version: "1"
             Configuration:
-              Owner: !Ref GitHubOwner
-              Repo: !Ref GitHubRepo
-              Branch: "main"
-              OAuthToken: !Ref GitHubOAuthToken
+              ConnectionArn: !Ref ConnectionArn
+              FullRepositoryId: !Sub "${GitHubOwner}/${GitHubRepo}"
+              BranchName: "main"
             OutputArtifacts:
               - Name: "SourceOutput"
       - Name: "Build"
