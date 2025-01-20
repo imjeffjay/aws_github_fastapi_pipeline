@@ -114,7 +114,14 @@ create-codebuild-project:
 		--name $(PROJECT_NAME) \
 		--source type=GITHUB,location=https://github.com/$(GITHUB_OWNER)/$(GITHUB_REPO).git \
 		--artifacts type=NO_ARTIFACTS \
-		--environment type=LINUX_CONTAINER,image=aws/codebuild/standard:5.0,computeType=BUILD_GENERAL1_SMALL,privilegedMode=true \
+		--environment type=LINUX_CONTAINER,image=aws/codebuild/standard:5.0,computeType=BUILD_GENERAL1_SMALL,privilegedMode=true,environmentVariables=[
+			{name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT},
+			{name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT},
+			{name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT},
+			{name=GITHUB_OAUTH_TOKEN,value=$(GITHUB_OAUTH_TOKEN),type=PLAINTEXT},
+			{name=GITHUB_OWNER,value=$(GITHUB_OWNER),type=PLAINTEXT},
+			{name=GITHUB_REPO,value=$(GITHUB_REPO),type=PLAINTEXT}
+		] \
 		--service-role $(IAM_ROLE)
 	@echo "CodeBuild project created successfully!"
 
