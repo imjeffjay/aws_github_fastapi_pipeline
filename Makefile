@@ -96,7 +96,7 @@ build-iam-role:
 		--stack-name $(IAM_STACK_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--parameter-overrides \
-			AWSSECRETS=$(SAMPLE_PIPELINE_PROJECT_ENV) \
+			AWSSECRETS=$(awspipeline) \
 			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
 			GitHubOwner=$(GITHUB_OWNER) \
 			GitHubRepo=$(GITHUB_REPO) \
