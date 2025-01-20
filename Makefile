@@ -78,7 +78,7 @@ build-iam-role:
 		--stack-name $(IAM_STACK_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--parameter-overrides \
-			AWSSECRETS=$(AWSSECRETS)
+			AWSSECRETS=$(AWSSECRETS) \
 			ConnectionArn=$(CONNECTION_ARN)
 	@echo "IAM roles and CodeStar Connection deployed successfully!"
 
