@@ -1,6 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: "IAM roles for CodePipeline and CodeBuild."
 
+Parameters:
+  SAMPLE_PIPELINE_PROJECT_ENV:
+    Type: String
+    Description: "Secrets Manager name for pipeline environment variables"
+
 Resources:
   # IAM Role for CodePipeline
   CodePipelineRole:
