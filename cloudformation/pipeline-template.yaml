@@ -2,6 +2,9 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: "CloudFormation template for FastAPI ECS pipeline setup with CodePipeline and CodeBuild."
 
 Parameters:
+  GitHubOAuthToken:
+    Type: String
+    Description: "GitHub OAuth token for accessing the repository"
   GitHubOwner:
     Type: String
     Description: "GitHub repository owner"
@@ -35,22 +38,11 @@ Parameters:
     Type: String
     Default: "FastAPIBuildProject"
     Description: "CodeBuild Project Name"
-  ConnectionArn:
-    Type: String
-    Description: "CodeStar Connection ARN for GitHub integration"
 
 Conditions:
   ECRNotExists: !Equals [!Ref RepositoryName, ""]
 
 Resources:
-
-  # Github connection  
-  GitHubConnection:
-  Type: AWS::CodeStarConnections::Connection
-  Properties:
-    ConnectionName: GitHubConnection
-    ProviderType: GitHub
-
   # ECR Repository
   ECRRepository:
     Condition: ECRNotExists
@@ -82,43 +74,6 @@ Resources:
           Cpu: 256
           PortMappings:
             - ContainerPort: 8000
-            
-  CodePipelineRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: 
-                - "codepipeline.amazonaws.com"
-                - "codebuild.amazonaws.com"
-            Action: "sts:AssumeRole"
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
-        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-        - "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess"
-        - "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
-        - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
-      Policies:
-        - PolicyName: AllowCustomPolicies
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - "secretsmanager:GetSecretValue"
-                  - "secretsmanager:DescribeSecret"
-                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret/${AWSSECRETS}*"
-        - PolicyName: AllowCodeStarConnection
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action: "codestar-connections:UseConnection"
-                Resource: !GetAtt GitHubCodeStarConnection.ConnectionArn
-
 
   ECSExecutionRole:
     Type: "AWS::IAM::Role"
@@ -146,15 +101,17 @@ Resources:
           Subnets: !Ref SubnetIds
           AssignPublicIp: "ENABLED"
 
-
   # CodeBuild Project
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
       Name: !Ref ProjectName
       Source:
-        Type: CODESTAR
-        Location: !GetAtt GitHubCodeStarConnection.ConnectionArn
+        Type: GITHUB
+        Location: !Sub "https://github.com/${GitHubOwner}/${GitHubRepo}.git"
+        Auth:
+          Type: OAUTH
+          Resource: !Ref GitHubOAuthToken
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/standard:5.0
@@ -165,56 +122,57 @@ Resources:
         Type: NO_ARTIFACTS
 
   # CodePipeline
-CodePipeline:
-  Type: "AWS::CodePipeline::Pipeline"
-  Properties:
-    RoleArn: !GetAtt CodePipelineRole.Arn
-    ArtifactStore:
-      Type: S3
-      Location: !Sub "${AWS::AccountId}-codepipeline-artifacts-${AWS::Region}"
-    Stages:
-      - Name: "Source"
-        Actions:
-          - Name: "Source"
-            ActionTypeId:
-              Category: "Source"
-              Owner: AWS
-              Provider: CodeStarSourceConnection
-              Version: "1"
-            Configuration:
-              ConnectionArn: !Ref ConnectionArn
-              FullRepositoryId: !Sub "${GitHubOwner}/${GitHubRepo}"
-              BranchName: "main"
-            OutputArtifacts:
-              - Name: "SourceOutput"
-      - Name: "Build"
-        Actions:
-          - Name: "Build"
-            ActionTypeId:
-              Category: "Build"
-              Owner: "AWS"
-              Provider: "CodeBuild"
-              Version: "1"
-            InputArtifacts:
-              - Name: "SourceOutput"
-            OutputArtifacts:
-              - Name: "BuildOutput"
-            Configuration:
-              ProjectName: !Ref ProjectName
-      - Name: "Deploy"
-        Actions:
-          - Name: "Deploy"
-            ActionTypeId:
-              Category: "Deploy"
-              Owner: "AWS"
-              Provider: "ECS"
-              Version: "1"
-            InputArtifacts:
-              - Name: "BuildOutput"
-            Configuration:
-              ClusterName: !Ref ECSCluster
-              ServiceName: !Ref ECSService
-              FileName: "imagedefinitions.json"
+  CodePipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Sub "${AWS::AccountId}-codepipeline-artifacts-${AWS::Region}"
+      Stages:
+        - Name: "Source"
+          Actions:
+            - Name: "Source"
+              ActionTypeId:
+                Category: "Source"
+                Owner: "ThirdParty"
+                Provider: "GitHub"
+                Version: "1"
+              Configuration:
+                Owner: !Ref GitHubOwner
+                Repo: !Ref GitHubRepo
+                Branch: "main"
+                OAuthToken: !Ref GitHubOAuthToken
+              OutputArtifacts:
+                - Name: "SourceOutput"
+        - Name: "Build"
+          Actions:
+            - Name: "Build"
+              ActionTypeId:
+                Category: "Build"
+                Owner: "AWS"
+                Provider: "CodeBuild"
+                Version: "1"
+              InputArtifacts:
+                - Name: "SourceOutput"
+              OutputArtifacts:
+                - Name: "BuildOutput"
+              Configuration:
+                ProjectName: !Ref ProjectName
+        - Name: "Deploy"
+          Actions:
+            - Name: "Deploy"
+              ActionTypeId:
+                Category: "Deploy"
+                Owner: "AWS"
+                Provider: "ECS"
+                Version: "1"
+              InputArtifacts:
+                - Name: "BuildOutput"
+              Configuration:
+                ClusterName: !Ref ECSCluster
+                ServiceName: !Ref ECSService
+                FileName: "imagedefinitions.json"
 
 Outputs:
   PipelineName:

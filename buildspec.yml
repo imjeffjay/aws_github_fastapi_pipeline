@@ -1,36 +1,29 @@
 version: 0.2
 
-phases:
-
-pre_build:
-  commands:
-    - echo "Validating environment variables..."
-    - echo "AWS_REGION=$AWS_REGION"
-    - echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID"
-    - echo "ECR_REPO_NAME=$ECR_REPO_NAME"
-    - echo "GITHUB_OAUTH_TOKEN=$GITHUB_OAUTH_TOKEN"
-    - echo "GITHUB_OWNER=$GITHUB_OWNER"
-    - echo "GITHUB_REPO=$GITHUB_REPO"
-    - echo "Authenticating with ECR..."
-    - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-    - echo "Cloning GitHub repository..."
-    - git clone https://$GITHUB_OAUTH_TOKEN@github.com/$GITHUB_OWNER/$GITHUB_REPO.git repo
-    - cd repo
-
-  build:
-    commands:
-      - echo "Building Docker image..."
-      - docker build -t $ECR_REPO_NAME .
-      - docker tag $ECR_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
-
-  post_build:
-    commands:
-      - echo "Pushing Docker image to ECR..."
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
-      - echo "Docker image pushed successfully!"
-
 env:
   variables:
     AWS_REGION: "us-east-1"
     AWS_ACCOUNT_ID: "475634715655"
     ECR_REPO_NAME: "fastapi-app"
+
+phases:
+  pre_build:
+    commands:
+      - echo "Validating environment variables..."
+      - echo "AWS_REGION=$AWS_REGION"
+      - echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID"
+      - echo "ECR_REPO_NAME=$ECR_REPO_NAME"
+      - echo "Authenticating with ECR..."
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - echo "Cloning GitHub repository..."
+      - git clone https://$GITHUB_OAUTH_TOKEN@github.com/$GITHUB_OWNER/$GITHUB_REPO.git .
+  build:
+    commands:
+      - echo "Building Docker image..."
+      - docker build -t $ECR_REPO_NAME .
+      - docker tag $ECR_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
+  post_build:
+    commands:
+      - echo "Pushing Docker image to ECR..."
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
+      - echo "Docker image pushed successfully!"

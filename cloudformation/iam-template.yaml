@@ -5,20 +5,8 @@ Parameters:
   AWSSECRETS:
     Type: String
     Description: "Name of the AWS Secrets Manager resource"
-  GitHubConnectionName:
-    Type: String
-    Default: "GitHubConnection"
-    Description: "Name of the CodeStar Connection"
 
 Resources:
-
-  # CodeStar Connection 
-  GitHubCodeStarConnection:
-    Type: "AWS::CodeStarConnections::Connection"
-    Properties:
-      ConnectionName: GitHubConnection
-      ProviderType: "GitHub"
-  
   CodePipelineRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -47,32 +35,15 @@ Resources:
                   - "secretsmanager:GetSecretValue"
                   - "secretsmanager:DescribeSecret"
                 Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret/${AWSSECRETS}*"
-        - PolicyName: AllowCodeStarConnection
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action: "codestar-connections:UseConnection"
-                Resource: !GetAtt GitHubCodeStarConnection.ConnectionArn
-
-    # CodeBuild Service Role
-  CodeBuildServiceRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: 
-                - "codebuild.amazonaws.com"
-            Action: "sts:AssumeRole"
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-        - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
-        - "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess"
+      Tags:
+        - Key: Environment
+          Value: Production
+        - Key: ProjectName
+          Value: FastAPI-Pipeline
 
 Outputs:
-  ConnectionArn:
-    Description: "The ARN of the CodeStar Connection"
-    Value: !GetAtt GitHubCodeStarConnection.ConnectionArn
+  RoleArn:
+    Description: "ARN of the CodePipeline IAM Role"
+    Value: !GetAtt CodePipelineRole.Arn
+
+

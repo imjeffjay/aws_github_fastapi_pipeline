@@ -23,10 +23,6 @@ GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(A
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
 AWSSECRETS = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].Name" --output text)
-CONNECTION_ARN = $(shell aws cloudformation describe-stacks \
-	--stack-name $(IAM_STACK_NAME) \
-	--query "Stacks[0].Outputs[?OutputKey=='ConnectionArn'].OutputValue" \
-	--output text)
 	
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
@@ -67,21 +63,20 @@ auth-ecr:
 
 # Build IAM Role
 build-iam-role:
-	@echo "Deploying IAM roles and CodeStar Connection..."
+	@echo "Deploying IAM roles..."
 	aws cloudformation deploy \
 		--template-file $(IAM_TEMPLATE) \
 		--stack-name $(IAM_STACK_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--parameter-overrides \
-			AWSSECRETS=$(AWSSECRETS) \
-			GitHubConnectionName=GitHubConnection
-	@echo "IAM roles and CodeStar Connection deployed successfully!"
+			AWSSECRETS=$(AWSSECRETS)
+	@echo "IAM roles deployed successfully!"
 
 create-codebuild-project:
 	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
 	aws codebuild create-project \
 		--name $(PROJECT_NAME) \
-		--source "type=CODESTAR,auth={type=OAUTH},location=$(CONNECTION_ARN)" \
+		--source "{\"type\":\"GITHUB\",\"location\":\"https://github.com/$(GITHUB_OWNER)/$(GITHUB_REPO).git\",\"auth\":{\"type\":\"OAUTH\",\"resource\":\"$(GITHUB_OAUTH_TOKEN)\"}}" \
 		--artifacts type=NO_ARTIFACTS \
 		--service-role $(IAM_ROLE) \
 		--environment "{\"type\":\"LINUX_CONTAINER\",\"image\":\"aws/codebuild/standard:5.0\",\"computeType\":\"BUILD_GENERAL1_SMALL\",\"privilegedMode\":true,\"environmentVariables\":[ \
@@ -100,12 +95,12 @@ build-push-image:
 	aws codebuild start-build \
 		--project-name $(PROJECT_NAME) \
 		--environment-variables-override \
-			name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT \
-			name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT \
-			name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT
-			name=GITHUB_OAUTH_TOKEN,value=$(GITHUB_OAUTH_TOKEN),type=PLAINTEXT \
-			name=GITHUB_OWNER,value=$(GITHUB_OWNER),type=PLAINTEXT \
-			name=GITHUB_REPO,value=$(GITHUB_REPO),type=PLAINTEXT
+			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
+			"name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT" \
+			"name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT" \
+			"name=GITHUB_OAUTH_TOKEN,value=$(GITHUB_OAUTH_TOKEN),type=PLAINTEXT" \
+			"name=GITHUB_OWNER,value=$(GITHUB_OWNER),type=PLAINTEXT" \
+			"name=GITHUB_REPO,value=$(GITHUB_REPO),type=PLAINTEXT"
 
 # Deploy ECS Resources (Cluster, Task Definition, Service):
 deploy-ecs:
