@@ -73,21 +73,14 @@ build-iam-role:
 	@echo "IAM roles deployed successfully!"
 
 create-codebuild-project:
-	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
-	aws codebuild create-project \
-		--name $(PROJECT_NAME) \
-		--source "{\"type\":\"GITHUB\",\"location\":\"https://github.com/$(GITHUB_OWNER)/$(GITHUB_REPO).git\",\"auth\":{\"type\":\"OAUTH\",\"resource\":\"$(GITHUB_OAUTH_TOKEN)\"}}" \
-		--artifacts type=NO_ARTIFACTS \
-		--service-role $(IAM_ROLE) \
-		--environment "{\"type\":\"LINUX_CONTAINER\",\"image\":\"aws/codebuild/standard:5.0\",\"computeType\":\"BUILD_GENERAL1_SMALL\",\"privilegedMode\":true,\"environmentVariables\":[ \
-			{\"name\":\"AWS_REGION\",\"value\":\"$(AWS_REGION)\",\"type\":\"PLAINTEXT\"}, \
-			{\"name\":\"AWS_ACCOUNT_ID\",\"value\":\"$(AWS_ACCOUNT_ID)\",\"type\":\"PLAINTEXT\"}, \
-			{\"name\":\"ECR_REPO_NAME\",\"value\":\"$(ECR_REPO_NAME)\",\"type\":\"PLAINTEXT\"}, \
-			{\"name\":\"GITHUB_OAUTH_TOKEN\",\"value\":\"$(GITHUB_OAUTH_TOKEN)\",\"type\":\"PLAINTEXT\"}, \
-			{\"name\":\"GITHUB_OWNER\",\"value\":\"$(GITHUB_OWNER)\",\"type\":\"PLAINTEXT\"}, \
-			{\"name\":\"GITHUB_REPO\",\"value\":\"$(GITHUB_REPO)\",\"type\":\"PLAINTEXT\"} \
-		]}"
-	@echo "CodeBuild project created successfully!"
+ @echo "Creating CodeBuild project: $(PROJECT_NAME)..."
+ aws codebuild create-project \
+ 	--name $(PROJECT_NAME) \
+ 	--source "{\"type\":\"GITHUB\",\"location\":\"https://github.com/$(GITHUB_OWNER)/$(GITHUB_REPO).git\",\"auth\":{\"type\":\"OAUTH\",\"resource\":\"$(GITHUB_OAUTH_TOKEN)\"}}" \
+ 	--artifacts type=NO_ARTIFACTS \
+ 	--service-role $(IAM_ROLE) \
+ 	--environment "{\"type\":\"LINUX_CONTAINER\",\"image\":\"aws/codebuild/standard:5.0\",\"computeType\":\"BUILD_GENERAL1_SMALL\",\"privilegedMode\":true,\"environmentVariables\":[]}"
+ @echo "CodeBuild project created successfully!"
 
 # Trigger CodeBuild to build and push Docker image
 build-push-image:
