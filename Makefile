@@ -84,14 +84,21 @@ create-codebuild-project:
 		--source "type=CODESTAR,auth={type=OAUTH},location=$(CONNECTION_ARN)" \
 		--artifacts type=NO_ARTIFACTS \
 		--service-role $(IAM_ROLE) \
-		--environment "{\"type\":\"LINUX_CONTAINER\",\"image\":\"aws/codebuild/standard:5.0\",\"computeType\":\"BUILD_GENERAL1_SMALL\",\"privilegedMode\":true}" || echo "CodeBuild project creation failed!"
+		--environment type=LINUX_CONTAINER,image=aws/codebuild/standard:5.0,computeType=BUILD_GENERAL1_SMALL,privilegedMode=true
 	@echo "CodeBuild project created successfully!"
 
 # Trigger CodeBuild to build and push Docker image
 build-push-image:
 	@echo "Triggering CodeBuild to build and push Docker image..."
 	aws codebuild start-build \
-		--project-name $(PROJECT_NAME)
+		--project-name $(PROJECT_NAME) \
+		--environment-variables-override \
+			name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT \
+			name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT \
+			name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT
+			name=GITHUB_OAUTH_TOKEN,value=$(GITHUB_OAUTH_TOKEN),type=PLAINTEXT \
+			name=GITHUB_OWNER,value=$(GITHUB_OWNER),type=PLAINTEXT \
+			name=GITHUB_REPO,value=$(GITHUB_REPO),type=PLAINTEXT
 
 # Deploy ECS Resources (Cluster, Task Definition, Service):
 deploy-ecs:
