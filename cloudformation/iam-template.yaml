@@ -35,7 +35,7 @@ Resources:
                   - "secretsmanager:GetSecretValue"
                   - "secretsmanager:DescribeSecret"
                 Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret/${AWSSECRETS}*"
-                - Effect: Allow
+              - Effect: Allow
                 Action:
                   - "iam:PassRole"
                 Resource: "*"
