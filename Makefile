@@ -5,6 +5,7 @@ TEMPLATE_DIR = cloudformation
 PIPELINE_TEMPLATE = $(TEMPLATE_DIR)/pipeline-template.yaml
 IAM_TEMPLATE = $(TEMPLATE_DIR)/iam-template.yaml
 STACK_NAME = FastAPIPipelineStack
+AWSSECRETS ?= codebuild
 AWS_REGION = us-east-1
 TASK_FAMILY = fastapi-task
 CONTAINER_NAME = fastapi-container
@@ -22,7 +23,7 @@ CLUSTER_NAME = FastAPICluster # Define the cluster name here
 GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOAuthToken')
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
-AWSSECRETS = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].Name" --output text)
+AWSSECRETS_VALUE = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='$(AWSSECRETS)'].Name" --output text)
 	
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
@@ -69,7 +70,7 @@ build-iam-role:
 		--stack-name $(IAM_STACK_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--parameter-overrides \
-			AWSSECRETS=$(AWSSECRETS)
+			AWSSECRETS=$(AWSSECRETS_VALUE)
 	@echo "IAM roles deployed successfully!"
 
 create-codebuild-project:
