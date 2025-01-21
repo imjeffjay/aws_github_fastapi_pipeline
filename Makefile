@@ -5,7 +5,7 @@ TEMPLATE_DIR = cloudformation
 PIPELINE_TEMPLATE = $(TEMPLATE_DIR)/pipeline-template.yaml
 IAM_TEMPLATE = $(TEMPLATE_DIR)/iam-template.yaml
 STACK_NAME = FastAPIPipelineStack
-AWSSECRETS = codebuild
+SECRETS = codebuild
 AWS_REGION = us-east-1
 TASK_FAMILY = fastapi-task
 CONTAINER_NAME = fastapi-container
@@ -20,10 +20,10 @@ CLUSTER_NAME = FastAPICluster # Define the cluster name here
 # ====================
 # Dynamic Variables
 # ====================
-GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOAuthToken')
-GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
-GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
-AWSSECRETS = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='$(AWSSECRETS)'].Name" --output text)
+GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(SECRETS) --query SecretString --output text | jq -r '.GitHubOAuthToken')
+GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(SECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
+GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(SECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
+AWSSECRETS = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='$(SECRETS)'].Name" --output text)
 	
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
