@@ -90,10 +90,8 @@ build-push-image:
 		--environment-variables-override \
 			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
 			"name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT" \
-			"name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT" \
-			"name=GITHUB_OAUTH_TOKEN,value=$(GITHUB_OAUTH_TOKEN),type=PLAINTEXT" \
-			"name=GITHUB_OWNER,value=$(GITHUB_OWNER),type=PLAINTEXT" \
-			"name=GITHUB_REPO,value=$(GITHUB_REPO),type=PLAINTEXT"
+			"name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT"
+	@echo "Build process triggered successfully!"
 
 # Deploy ECS Resources (Cluster, Task Definition, Service):
 deploy-ecs:
