@@ -34,7 +34,7 @@ Resources:
                 Action:
                   - "secretsmanager:GetSecretValue"
                   - "secretsmanager:DescribeSecret"
-                Resource: "arn:aws:secretsmanager:us-east-1:475634715655:secret/awspipeline-OOh4tc"
+                Resource: "arn:aws:secretsmanager:us-east-1:475634715655:secret:codebuild-2Ylq4T"
               - Effect: Allow
                 Action:
                   - "iam:PassRole"

@@ -20,7 +20,8 @@ CLUSTER_NAME = FastAPICluster # Define the cluster name here
 # Dynamic Variables
 # ====================
 AWSSECRETS = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].Name" --output text)
-GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOAuthToken')
+AWSSECRETS2 = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='codebuild'].Name" --output text)
+GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS2) --query SecretString --output text | jq -r '.GitHubOAuthToken')
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
 
