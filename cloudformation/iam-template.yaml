@@ -1,6 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: "IAM roles for CodePipeline and CodeBuild."
 
+Parameters:
   SecretArn1:
     Type: String
     Description: "ARN of the first secret for CodeBuild to access"
