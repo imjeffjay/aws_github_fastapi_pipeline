@@ -82,16 +82,16 @@ create-codebuild-project:
 	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
 	aws codebuild create-project \
 		--name $(PROJECT_NAME) \
-		--source "type=GITHUB,location=https://github.com/$(GITHUB_OWNER)/$(GITHUB_REPO).git" \
+		--source "{\"type\":\"GITHUB\",\"location\":\"https://github.com/$(GITHUB_OWNER)/$(GITHUB_REPO).git\"}" \
 		--artifacts type=NO_ARTIFACTS \
 		--service-role $(IAM_ROLE) \
-		--environment "{\"type\":\"LINUX_CONTAINER\",\"image\":\"aws/codebuild/standard:5.0\",\"computeType\":\"BUILD_GENERAL1_SMALL\",\"privilegedMode\":true}" \
-		--environment-variables-override \
-			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
-			"name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT" \
-			"name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT" \
-			"name=AWSSECRETS,value=$(AWSSECRETS),type=PLAINTEXT" \
-			"name=AWSSECRETS2,value=$(AWSSECRETS2),type=PLAINTEXT"			
+		--environment "{\"type\":\"LINUX_CONTAINER\",\"image\":\"aws/codebuild/standard:5.0\",\"computeType\":\"BUILD_GENERAL1_SMALL\",\"privilegedMode\":true,\"environmentVariables\":[ \
+			{\"name\":\"AWS_REGION\",\"value\":\"$(AWS_REGION)\",\"type\":\"PLAINTEXT\"}, \
+			{\"name\":\"ECR_REPO_NAME\",\"value\":\"$(ECR_REPO_NAME)\",\"type\":\"PLAINTEXT\"}, \
+			{\"name\":\"AWS_ACCOUNT_ID\",\"value\":\"$(AWS_ACCOUNT_ID)\",\"type\":\"PLAINTEXT\"}, \
+			{\"name\":\"AWSSECRETS\",\"value\":\"$(AWSSECRETS)\",\"type\":\"PLAINTEXT\"}, \
+			{\"name\":\"AWSSECRETS2\",\"value\":\"$(AWSSECRETS2)\",\"type\":\"PLAINTEXT\"} \
+		]}"
 	@echo "CodeBuild project created successfully!"
 
 # Trigger CodeBuild to build and push Docker image
