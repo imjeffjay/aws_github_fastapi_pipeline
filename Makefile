@@ -21,6 +21,7 @@ CLUSTER_NAME = FastAPICluster # Define the cluster name here
 # ====================
 AWSSECRETS = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].Name" --output text)
 AWSSECRETS2 = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='codebuild'].Name" --output text)
+ARNS = $(AWSSECRETS),$(AWSSECRETS2)
 GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS2) --query SecretString --output text | jq -r '.GitHubOAuthToken')
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
@@ -71,17 +72,23 @@ build-iam-role:
 		--stack-name $(IAM_STACK_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--parameter-overrides \
-			AWSSECRETS=$(AWSSECRETS)
+			SecretArns=$(ARNS)
 	@echo "IAM roles deployed successfully!"
 
 create-codebuild-project:
 	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
 	aws codebuild create-project \
 		--name $(PROJECT_NAME) \
-		--source "{\"type\":\"GITHUB\",\"location\":\"https://github.com/$(GITHUB_OWNER)/$(GITHUB_REPO).git\",\"auth\":{\"type\":\"OAUTH\",\"resource\":\"$(GITHUB_OAUTH_TOKEN)\"}}" \
+		--source "type=GITHUB,location=https://github.com/$(GITHUB_OWNER)/$(GITHUB_REPO).git" \
 		--artifacts type=NO_ARTIFACTS \
 		--service-role $(IAM_ROLE) \
-		--environment "{\"type\":\"LINUX_CONTAINER\",\"image\":\"aws/codebuild/standard:5.0\",\"computeType\":\"BUILD_GENERAL1_SMALL\",\"privilegedMode\":true,\"environmentVariables\":[]}"
+		--environment "{\"type\":\"LINUX_CONTAINER\",\"image\":\"aws/codebuild/standard:5.0\",\"computeType\":\"BUILD_GENERAL1_SMALL\",\"privilegedMode\":true}" \
+		--environment-variables-override \
+			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
+			"name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT" \
+			"name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT" \
+			"name=AWSSECRETS,value=$(AWSSECRETS),type=PLAINTEXT"
+			"name=AWSSECRETS2,value=$(AWSSECRETS2),type=PLAINTEXT"			
 	@echo "CodeBuild project created successfully!"
 
 # Trigger CodeBuild to build and push Docker image
@@ -93,6 +100,8 @@ build-push-image:
 			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
 			"name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT" \
 			"name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT"
+			"name=AWSSECRETS,value=$(AWSSECRETS),type=PLAINTEXT"
+			"name=AWSSECRETS2,value=$(AWSSECRETS2),type=PLAINTEXT"			
 	@echo "Build process triggered successfully!"
 
 # Deploy ECS Resources (Cluster, Task Definition, Service):
