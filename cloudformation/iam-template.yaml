@@ -39,7 +39,7 @@ Resources:
                 Action:
                   - "secretsmanager:GetSecretValue"
                   - "secretsmanager:DescribeSecret"
-                Resource: !Join [",", !Ref SecretArns]
+                Resource: !Split [",", !Ref SecretArns]
               - Effect: Allow
                 Action:
                   - "iam:PassRole"
