@@ -1,15 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: "IAM roles for CodePipeline and CodeBuild."
 
-Parameters:
-  AWSSECRETS:
+  SecretArn1:
     Type: String
-    Description: "Name of the AWS Secrets Manager resource"
-
-Parameters:
-  SecretArns:
-    Type: CommaDelimitedList
-    Description: "List of secret ARNs for CodeBuild to access"
+    Description: "ARN of the first secret for CodeBuild to access"
+  SecretArn2:
+    Type: String
+    Description: "ARN of the second secret for CodeBuild to access"
 
 Resources:
   CodePipelineRole:
@@ -39,7 +36,9 @@ Resources:
                 Action:
                   - "secretsmanager:GetSecretValue"
                   - "secretsmanager:DescribeSecret"
-                Resource: !Split [",", !Ref SecretArns]
+                Resource:
+                  - !Ref SecretArn1
+                  - !Ref SecretArn2
               - Effect: Allow
                 Action:
                   - "iam:PassRole"

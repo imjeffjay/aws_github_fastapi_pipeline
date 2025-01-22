@@ -74,7 +74,8 @@ build-iam-role:
 		--stack-name $(IAM_STACK_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--parameter-overrides \
-			SecretArns=$(ARNS)
+			SecretArn1=$(SECRET_ARN1) \
+			SecretArn2=$(SECRET_ARN2)
 	@echo "IAM roles deployed successfully!"
 
 create-codebuild-project:
