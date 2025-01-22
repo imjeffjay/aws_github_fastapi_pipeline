@@ -23,7 +23,7 @@ AWSSECRETS = $(shell aws secretsmanager list-secrets --query "SecretList[?Name==
 AWSSECRETS2 = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='codebuild'].Name" --output text)
 SECRET_ARN1 = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='codebuild'].ARN" --output text)
 SECRET_ARN2 = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].ARN" --output text)
-ARNS = $(AWSSESECRET_ARN1CRETS),$(SECRET_ARN2)
+ARNS = $(SECRET_ARN1),$(SECRET_ARN2)
 GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS2) --query SecretString --output text | jq -r '.GitHubOAuthToken')
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
