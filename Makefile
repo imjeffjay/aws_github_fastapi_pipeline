@@ -90,7 +90,7 @@ create-codebuild-project:
 			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
 			"name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT" \
 			"name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT" \
-			"name=AWSSECRETS,value=$(AWSSECRETS),type=PLAINTEXT"
+			"name=AWSSECRETS,value=$(AWSSECRETS),type=PLAINTEXT" \
 			"name=AWSSECRETS2,value=$(AWSSECRETS2),type=PLAINTEXT"			
 	@echo "CodeBuild project created successfully!"
 
@@ -102,8 +102,8 @@ build-push-image:
 		--environment-variables-override \
 			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
 			"name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT" \
-			"name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT"
-			"name=AWSSECRETS,value=$(AWSSECRETS),type=PLAINTEXT"
+			"name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT" \
+			"name=AWSSECRETS,value=$(AWSSECRETS),type=PLAINTEXT" \
 			"name=AWSSECRETS2,value=$(AWSSECRETS2),type=PLAINTEXT"			
 	@echo "Build process triggered successfully!"
 
