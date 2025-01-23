@@ -137,11 +137,11 @@ deploy-ecs:
 			ClusterName=$(CLUSTER_NAME) \
 			TaskFamily=$(TASK_FAMILY) \
 			SubnetIds=$(SUBNET_IDS) \
-			RepositoryName=$(ECR_REPO_NAME) \  # Pass the existing ECR repo
+			RepositoryName=$(ECR_REPO_NAME) \
 			GitHubOwner=$(GITHUB_OWNER) \
 			GitHubOAuthToken=$(GITHUB_TOKEN) \
 			GitHubRepo=$(GITHUB_REPO) \
-			CodePipelineRoleArn=$(IAM_ROLE) \  # Dynamically pass the role ARN
+			CodePipelineRoleArn=$(IAM_ROLE) \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # Generate imagedefinitions.json
@@ -162,13 +162,13 @@ deploy-cloudformation:
 			GitHubOwner=$(GITHUB_OWNER) \
 			GitHubRepo=$(GITHUB_REPO) \
 			AWSRegion=$(AWS_REGION) \
-			RepositoryName=$(ECR_REPO_NAME) \  # Pass the existing ECR repo
+			RepositoryName=$(ECR_REPO_NAME) \
 			ClusterName=$(CLUSTER_NAME) \
 			TaskFamily=$(TASK_FAMILY) \
 			ContainerName=$(CONTAINER_NAME) \
 			SubnetIds=$(SUBNET_IDS) \
 			ProjectName=$(PROJECT_NAME) \
-			CodePipelineRoleArn=$(IAM_ROLE) \  # Dynamically pass the role ARN
+			CodePipelineRoleArn=$(IAM_ROLE) \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # ====================
