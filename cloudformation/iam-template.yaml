@@ -54,6 +54,8 @@ Resources:
                   - "ecr:BatchGetImage"
                   - "ecr:GetDownloadUrlForLayer"
                   - "ecr:DescribeRepositories"
+                  - "ecr:PutImage"
+                  - "ecr:BatchCheckLayerAvailability"
                 Resource: "*"
       Tags:
         - Key: Environment
