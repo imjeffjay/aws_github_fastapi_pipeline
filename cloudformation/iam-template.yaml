@@ -60,15 +60,27 @@ Resources:
                   - "ecr:UploadLayerPart"
                   - "ecr:CompleteLayerUpload"
                 Resource: "*"
+        - PolicyName: AllowCodeBuild
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "codebuild:StartBuild"
+                  - "codebuild:BatchGetBuilds"
+                Resource: "*"
       Tags:
         - Key: Environment
           Value: Production
         - Key: ProjectName
           Value: FastAPI-Pipeline
+      
 
 Outputs:
-  RoleArn:
-    Description: "ARN of the CodePipeline IAM Role"
+  CodePipelineRoleArn:
+    Description: "The ARN of the CodePipeline IAM Role"
     Value: !GetAtt CodePipelineRole.Arn
+    Export:
+      Name: CodePipelineRoleArn
 
 

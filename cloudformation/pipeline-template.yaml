@@ -38,14 +38,24 @@ Parameters:
     Type: String
     Default: "FastAPIBuildProject"
     Description: "CodeBuild Project Name"
+  CodePipelineRoleArn:
+    Type: String
+    Description: "ARN of the CodePipeline IAM Role"
+  CreateECR:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: "Whether to create an ECR repository"
 
 Conditions:
-  ECRNotExists: !Equals [!Ref RepositoryName, ""]
+  CreateECRCondition: !Equals [!Ref CreateECR, "true"]
 
 Resources:
   # ECR Repository
   ECRRepository:
-    Condition: ECRNotExists
+    Condition: CreateECRCondition
     Type: "AWS::ECR::Repository"
     Properties:
       RepositoryName: !Ref RepositoryName
@@ -121,6 +131,16 @@ Resources:
       Artifacts:
         Type: NO_ARTIFACTS
 
+  ArtifactBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Sub "${AWS::AccountId}-codepipeline-artifacts-${AWS::Region}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
   # CodePipeline
   CodePipeline:
     Type: "AWS::CodePipeline::Pipeline"
@@ -128,7 +148,7 @@ Resources:
       RoleArn: !GetAtt CodePipelineRole.Arn
       ArtifactStore:
         Type: S3
-        Location: !Sub "${AWS::AccountId}-codepipeline-artifacts-${AWS::Region}"
+        Location: !Ref ArtifactBucket
       Stages:
         - Name: "Source"
           Actions:

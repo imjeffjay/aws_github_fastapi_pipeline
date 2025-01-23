@@ -141,6 +141,10 @@ deploy-ecs:
 			GitHubOwner=$(GITHUB_OWNER) \
 			GitHubOAuthToken=$(GITHUB_TOKEN) \
 			GitHubRepo=$(GITHUB_REPO) \
+			CodePipelineRoleArn=$(aws cloudformation describe-stacks \
+			--stack-name IAMStackName \
+			--query "Stacks[0].Outputs[?ExportName=='CodePipelineRoleArn'].OutputValue" \
+			--output text) \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # Generate imagedefinitions.json
