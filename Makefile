@@ -97,6 +97,16 @@ create-codebuild-project:
 			{\"name\":\"AWSSECRETS2\",\"value\":\"$(AWSSECRETS2)\",\"type\":\"PLAINTEXT\"} \
 		]}"
 	@echo "CodeBuild project created successfully!"
+	@while true; do \
+		status=$$(aws codebuild list-projects --query "projects" --output text | grep -w $(PROJECT_NAME)); \
+		if [ ! -z "$$status" ]; then \
+			echo "CodeBuild project $(PROJECT_NAME) is ready."; \
+			break; \
+		fi; \
+		echo "Still waiting for CodeBuild project..."; \
+		sleep 5; \
+	done
+	@echo "CodeBuild project created successfully and ready!"
 
 # Trigger CodeBuild to build and push Docker image
 build-push-image:
