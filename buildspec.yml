@@ -13,6 +13,7 @@ phases:
       - git config --global user.name "$(GITHUB_OWNER)"
       - git config --global user.email "$(GITHUB_OWNER)@users.noreply.github.com"
       - git clone https://${AUTH_TYPE}:${GITHUB_TOKEN}@github.com/${GITHUB_OWNER}/${GITHUB_REPO}.git repo
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
       - cd repo
 
   build:
