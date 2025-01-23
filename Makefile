@@ -19,15 +19,17 @@ CLUSTER_NAME = FastAPICluster # Define the cluster name here
 # ====================
 # Dynamic Variables
 # ====================
+
 AWSSECRETS = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].Name" --output text)
 AWSSECRETS2 = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='codebuild'].Name" --output text)
-SECRET_ARN1 = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='codebuild'].ARN" --output text)
-SECRET_ARN2 = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].ARN" --output text)
-ARNS = $(SECRET_ARN1),$(SECRET_ARN2)
-GITHUB_OAUTH_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS2) --query SecretString --output text | jq -r '.GitHubOAuthToken')
+SECRET_ARN1 = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].ARN" --output text)
+SECRET_ARN2 = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='codebuild'].ARN" --output text)
+
+GITHUB_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.Token')
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
-
+AUTH_TYPE = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AuthType')
+SERVER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.Server')
 	
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
@@ -103,8 +105,11 @@ build-push-image:
 			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
 			"name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT" \
 			"name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT" \
-			"name=AWSSECRETS,value=$(AWSSECRETS),type=PLAINTEXT" \
-			"name=AWSSECRETS2,value=$(AWSSECRETS2),type=PLAINTEXT"			
+			"name=GITHUB_TOKEN,value=$(GITHUB_TOKEN),type=PLAINTEXT" \
+			"name=GITHUB_OWNER,value=$(GITHUB_OWNER),type=PLAINTEXT" \
+			"name=GITHUB_REPO,value=$(GITHUB_REPO),type=PLAINTEXT" \
+			"name=AUTH_TYPE,value=$(AUTH_TYPE),type=PLAINTEXT" \
+			"name=SERVER,value=$(SERVER),type=PLAINTEXT"
 	@echo "Build process triggered successfully!"
 
 # Deploy ECS Resources (Cluster, Task Definition, Service):

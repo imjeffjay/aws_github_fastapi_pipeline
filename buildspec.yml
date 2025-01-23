@@ -3,13 +3,17 @@ version: 0.2
 phases:
   pre_build:
     commands:
-      - echo "Validating secrets access..."
-      - export TOKEN=$(aws secretsmanager get-secret-value --secret-id $AWSSECRETS --query SecretString --output text | jq -r '.GitHubOAuthToken')
-      - echo "Token retrieved: ${TOKEN}"
-      - export AWS_ACCOUNT_ID=$(aws secretsmanager get-secret-value --secret-id $AWSSECRETS --query SecretString --output text | jq -r '.AWSAccountId')
-      - echo "AWS_ACCOUNT_ID retrieved: ${AWS_ACCOUNT_ID}"
-      - echo "Authenticating with ECR..."
-      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - echo "Validating environment variables..."
+      - echo "AWS_REGION=$AWS_REGION"
+      - echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID"
+      - echo "ECR_REPO_NAME=$ECR_REPO_NAME"
+      - echo "AUTH_TYPE=$AUTH_TYPE"
+      - echo "SERVER=$SERVER"
+      - echo "Authenticating to GitHub..."
+      - git config --global user.name "$(GITHUB_OWNER)"
+      - git config --global user.email "$(GITHUB_OWNER)@users.noreply.github.com"
+      - git clone https://${AUTH_TYPE}:${GITHUB_TOKEN}@github.com/${GITHUB_OWNER}/${GITHUB_REPO}.git repo
+      - cd repo
 
   build:
     commands:
@@ -25,9 +29,9 @@ phases:
 
 env:
   variables:
-    AWS_REGION: "$AWS_REGION"
-    AWS_ACCOUNT_ID: "$AWS_ACCOUNT_ID"
-    ECR_REPO_NAME: "$ECR_REPO_NAME"
-    AWSSECRETS: "$AWSSECRETS"
-    AWSSECRETS2: "$AWSSECRETS2"    
+    AWS_REGION: "us-east-1"
+    AWS_ACCOUNT_ID: "475634715655"
+    ECR_REPO_NAME: "fastapi-app"
+    AUTH_TYPE: "PERSONAL_ACCESS_TOKEN"
+    SERVER: "GitHub"
 
