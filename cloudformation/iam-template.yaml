@@ -56,6 +56,9 @@ Resources:
                   - "ecr:DescribeRepositories"
                   - "ecr:PutImage"
                   - "ecr:BatchCheckLayerAvailability"
+                  - "ecr:InitiateLayerUpload"
+                  - "ecr:UploadLayerPart"
+                  - "ecr:CompleteLayerUpload"
                 Resource: "*"
       Tags:
         - Key: Environment
