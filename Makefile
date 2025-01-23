@@ -156,6 +156,6 @@ deploy-cloudformation:
 # ====================
 
 # All-in-One Deployment
-deploy-all: build-iam-role build-ecr create-codebuild-project build-push-image deploy-cloudformation deploy-ecs
+deploy-all: build-iam-role build-ecr create-codebuild-project build-push-image
 	@echo "All services successfully deployed!"
 
