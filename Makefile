@@ -42,6 +42,7 @@ IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 AWS_ACCOUNT_ID = $(shell aws sts get-caller-identity --query Account --output text)
 DOCKER_IMAGE = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):$(IMAGE_TAG)
 
+
 # Fetch default VPC ID
 VPC_ID = $(shell aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query "Vpcs[0].VpcId" --output text)
 
@@ -137,13 +138,16 @@ deploy-ecs:
 			TaskFamily=$(TASK_FAMILY) \
 			SubnetIds=$(SUBNET_IDS) \
 			RepositoryName=$(ECR_REPO_NAME) \
+			GitHubOwner=$(GITHUB_OWNER) \
+			GitHubOAuthToken=$(GITHUB_TOKEN) \
+			GitHubRepo=$(GITHUB_REPO) \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # Generate imagedefinitions.json
 generate-imagedefinitions:
 	@echo "Generating imagedefinitions.json for $(CONTAINER_NAME)..."
-	@echo '[{"name": "$(CONTAINER_NAME)", "imageUri": "$(DOCKER_IMAGE)"}]' > $(IMAGEDef_FILE)
-	@cat $(IMAGEDef_FILE)
+	@echo '[{"name": "$(CONTAINER_NAME)", "imageUri": "$(DOCKER_IMAGE)"}]' > ./imagedefinitions.json
+	@cat ./imagedefinitions.json
 
 
 # Deploy CodePipeline
@@ -153,7 +157,7 @@ deploy-cloudformation:
 		--template-file $(PIPELINE_TEMPLATE) \
 		--stack-name $(STACK_NAME) \
 		--parameter-overrides \
-			GitHubOAuthToken=$(GITHUB_OAUTH_TOKEN) \
+			GitHubOAuthToken=$(GITHUB_TOKEN) \
 			GitHubOwner=$(GITHUB_OWNER) \
 			GitHubRepo=$(GITHUB_REPO) \
 			AWSRegion=$(AWS_REGION) \
