@@ -127,7 +127,7 @@ Resources:
         Image: aws/codebuild/standard:5.0
         PrivilegedMode: true
         Type: LINUX_CONTAINER
-      ServiceRole: !GetAtt CodePipelineRole.Arn
+      ServiceRole: !Ref CodePipelineRoleArn
       Artifacts:
         Type: NO_ARTIFACTS
 
@@ -145,7 +145,7 @@ Resources:
   CodePipeline:
     Type: "AWS::CodePipeline::Pipeline"
     Properties:
-      RoleArn: !GetAtt CodePipelineRole.Arn
+      RoleArn: !Ref CodePipelineRoleArn
       ArtifactStore:
         Type: S3
         Location: !Ref ArtifactBucket
