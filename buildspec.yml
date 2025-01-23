@@ -10,6 +10,8 @@ phases:
       - echo "AUTH_TYPE=$AUTH_TYPE"
       - echo "SERVER=$SERVER"
       - echo "Authenticating to GitHub..."
+      - echo "Authenticating to Docker Hub..."
+      - echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
       - git config --global user.name "$(GITHUB_OWNER)"
       - git config --global user.email "$(GITHUB_OWNER)@users.noreply.github.com"
       - git clone https://${AUTH_TYPE}:${GITHUB_TOKEN}@github.com/${GITHUB_OWNER}/${GITHUB_REPO}.git repo
