@@ -39,8 +39,6 @@ IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--query "StackResources[0].PhysicalResourceId" \
 	--output text)
 
-
-
 IAM_ROLE_NAME = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
 	--logical-resource-id CodePipelineRole \
@@ -54,7 +52,6 @@ IAM_ROLE_ARN = $(shell aws iam get-role \
 AWS_ACCOUNT_ID = $(shell aws sts get-caller-identity --query Account --output text)
 DOCKER_IMAGE = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):$(IMAGE_TAG)
 
-
 # Fetch default VPC ID
 VPC_ID = $(shell aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query "Vpcs[0].VpcId" --output text)
 
@@ -64,7 +61,6 @@ SUBNET_IDS = $(shell aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(VP
 # ====================
 # Debugging Commands
 # ====================
-
 
 
 # ====================
