@@ -154,6 +154,7 @@ generate-imagedefinitions:
 # Deploy CodePipeline
 deploy-cloudformation:
 	@echo "Deploying CloudFormation stack..."
+	@echo "IAM_ROLE=$(IAM_ROLE)"
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
 		--stack-name $(STACK_NAME) \

@@ -76,7 +76,7 @@ Resources:
       RequiresCompatibilities:
         - FARGATE
       NetworkMode: awsvpc
-      ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
+      ExecutionRoleArn: !Ref CodePipelineRoleArn
       ContainerDefinitions:
         - Name: !Ref ContainerName
           Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${RepositoryName}:latest"
@@ -84,19 +84,6 @@ Resources:
           Cpu: 256
           PortMappings:
             - ContainerPort: 8000
-
-  ECSExecutionRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: "ecs-tasks.amazonaws.com"
-            Action: "sts:AssumeRole"
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 
   # ECS Service
   ECSService:
