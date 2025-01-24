@@ -55,10 +55,18 @@ Parameters:
       - "true"
       - "false"
     Description: "Whether to create the CodeBuild project"
+  CreateArtifactBucket:
+  Type: String
+  Default: "true"
+  AllowedValues:
+    - "true"
+    - "false"
+  Description: "Whether to create the artifact bucket"
 
 Conditions:
   CreateECRCondition: !Equals [!Ref CreateECR, "true"]
   CreateCodeBuildCondition: !Equals [!Ref CreateCodeBuild, "true"]
+  CreateArtifactBucketCondition: !Equals [!Ref CreateArtifactBucket, "true"]
 
 Resources:
   # ECR Repository
@@ -128,6 +136,7 @@ Resources:
         Type: NO_ARTIFACTS
 
   ArtifactBucket:
+    Condition: CreateArtifactBucketCondition
     Type: "AWS::S3::Bucket"
     Properties:
       BucketName: !Sub "${AWS::AccountId}-codepipeline-artifacts-${AWS::Region}"

@@ -150,6 +150,8 @@ deploy-ecs:
 			GitHubOAuthToken=$(GITHUB_TOKEN) \
 			GitHubRepo=$(GITHUB_REPO) \
 			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
+			DOCKER_USERNAME=$(DOCKER_USERNAME) \
+			DOCKER_TOKEN=$(DOCKER_TOKEN) \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # Generate imagedefinitions.json
@@ -178,6 +180,8 @@ deploy-cloudformation:
 			SubnetIds=$(SUBNET_IDS) \
 			ProjectName=$(PROJECT_NAME) \
 			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
+			DOCKER_USERNAME=$(DOCKER_USERNAME) \
+			DOCKER_TOKEN=$(DOCKER_TOKEN) \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # ====================
