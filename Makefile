@@ -39,6 +39,18 @@ IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--query "StackResources[0].PhysicalResourceId" \
 	--output text)
 
+
+
+IAM_ROLE_NAME = $(shell aws cloudformation describe-stack-resources \
+	--stack-name $(IAM_STACK_NAME) \
+	--logical-resource-id CodePipelineRole \
+	--query "StackResources[0].PhysicalResourceId" \
+	--output text)
+
+IAM_ROLE_ARN = $(shell aws iam get-role \
+	--role-name $(IAM_ROLE_NAME) \
+	--query "Role.Arn" --output text)
+
 AWS_ACCOUNT_ID = $(shell aws sts get-caller-identity --query Account --output text)
 DOCKER_IMAGE = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):$(IMAGE_TAG)
 
@@ -89,7 +101,7 @@ create-codebuild-project:
 		--name $(PROJECT_NAME) \
 		--source "{\"type\":\"GITHUB\",\"location\":\"https://github.com/$(GITHUB_OWNER)/$(GITHUB_REPO).git\"}" \
 		--artifacts type=NO_ARTIFACTS \
-		--service-role $(IAM_ROLE) \
+		--service-role $(IAM_ROLE_ARN) \
 		--environment "{\"type\":\"LINUX_CONTAINER\",\"image\":\"aws/codebuild/standard:5.0\",\"computeType\":\"BUILD_GENERAL1_SMALL\",\"privilegedMode\":true,\"environmentVariables\":[ \
 			{\"name\":\"AWS_REGION\",\"value\":\"$(AWS_REGION)\",\"type\":\"PLAINTEXT\"}, \
 			{\"name\":\"ECR_REPO_NAME\",\"value\":\"$(ECR_REPO_NAME)\",\"type\":\"PLAINTEXT\"}, \
@@ -141,7 +153,7 @@ deploy-ecs:
 			GitHubOwner=$(GITHUB_OWNER) \
 			GitHubOAuthToken=$(GITHUB_TOKEN) \
 			GitHubRepo=$(GITHUB_REPO) \
-			CodePipelineRoleArn=$(IAM_ROLE) \
+			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # Generate imagedefinitions.json
@@ -154,7 +166,7 @@ generate-imagedefinitions:
 # Deploy CodePipeline
 deploy-cloudformation:
 	@echo "Deploying CloudFormation stack..."
-	@echo "IAM_ROLE=$(IAM_ROLE)"
+	@echo "IAM_ROLE_ARN=$(IAM_ROLE_ARN)"
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
 		--stack-name $(STACK_NAME) \
@@ -169,7 +181,7 @@ deploy-cloudformation:
 			ContainerName=$(CONTAINER_NAME) \
 			SubnetIds=$(SUBNET_IDS) \
 			ProjectName=$(PROJECT_NAME) \
-			CodePipelineRoleArn=$(IAM_ROLE) \
+			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # ====================
