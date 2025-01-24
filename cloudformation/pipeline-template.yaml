@@ -43,14 +43,22 @@ Parameters:
     Description: "ARN of the CodePipeline IAM Role"
   CreateECR:
     Type: String
-    Default: "true"
+    Default: "false"
     AllowedValues:
       - "true"
       - "false"
-    Description: "Whether to create an ECR repository"
+    Description: "Whether to create the ECR repository"
+  CreateCodeBuild:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: "Whether to create the CodeBuild project"
 
 Conditions:
   CreateECRCondition: !Equals [!Ref CreateECR, "true"]
+  CreateCodeBuildCondition: !Equals [!Ref CreateCodeBuild, "true"]
 
 Resources:
   # ECR Repository
@@ -100,6 +108,7 @@ Resources:
 
   # CodeBuild Project
   CodeBuildProject:
+    Condition: CreateCodeBuildCondition
     Type: AWS::CodeBuild::Project
     Properties:
       Name: !Ref ProjectName
