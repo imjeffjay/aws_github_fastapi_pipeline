@@ -183,7 +183,7 @@ deploy-cloudformation:
 			DOCKERUSERNAME=$(DOCKERUSERNAME) \
 			DOCKERTOKEN=$(DOCKERTOKEN) \
 			CreateArtifactBucket=true \
-			CreateCodeBuild=true \
+			CreateCodeBuild=false \
 			CreateECRCondition=false \
 		--capabilities CAPABILITY_NAMED_IAM
 
