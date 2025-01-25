@@ -56,12 +56,12 @@ Parameters:
       - "false"
     Description: "Whether to create the CodeBuild project"
   CreateArtifactBucket:
-  Type: String
-  Default: "true"
-  AllowedValues:
-    - "true"
-    - "false"
-  Description: "Whether to create the artifact bucket"
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: "Whether to create the artifact bucket"
 
 Conditions:
   CreateECRCondition: !Equals [!Ref CreateECR, "true"]
