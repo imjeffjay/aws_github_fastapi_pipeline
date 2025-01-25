@@ -182,6 +182,9 @@ deploy-cloudformation:
 			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
 			DOCKER_USERNAME=$(DOCKER_USERNAME) \
 			DOCKER_TOKEN=$(DOCKER_TOKEN) \
+			CreateArtifactBucket=false \
+			CreateCodeBuild=false \
+			CreateECRCondition=false \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # ====================
