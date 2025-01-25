@@ -11,10 +11,10 @@ Parameters:
   GitHubRepo:
     Type: String
     Description: "GitHub repository name"
-  DOCKER_USERNAME:
+  DOCKERUSERNAME:
     Type: String
     Description: "Docker Hub username for authentication"
-  DOCKER_TOKEN:
+  DOCKERTOKEN:
     Type: String
     Description: "Docker Hub personal access token for authentication"
   AWSRegion:
@@ -138,10 +138,10 @@ Resources:
         PrivilegedMode: true
         Type: LINUX_CONTAINER
         EnvironmentVariables:
-          - Name: DOCKER_USERNAME
-            Value: !Ref DOCKER_USERNAME
-          - Name: DOCKER_TOKEN
-            Value: !Ref DOCKER_TOKEN
+          - Name: DOCKERUSERNAME
+            Value: !Ref DOCKERUSERNAME
+          - Name: DOCKERTOKEN
+            Value: !Ref DOCKERTOKEN
       ServiceRole: !Ref CodePipelineRoleArn
       Artifacts:
         Type: NO_ARTIFACTS
@@ -197,8 +197,8 @@ Resources:
                 ProjectName: !Ref ProjectName
                 EnvironmentVariablesOverride: !Sub |
                   [
-                    {"name": "DOCKER_USERNAME", "value": "${DOCKER_USERNAME}", "type": "PLAINTEXT"},
-                    {"name": "DOCKER_TOKEN", "value": "${DOCKER_TOKEN}", "type": "PLAINTEXT"}
+                    {"name": "DOCKERUSERNAME", "value": "${DOCKERUSERNAME}", "type": "PLAINTEXT"},
+                    {"name": "DOCKERTOKEN", "value": "${DOCKERTOKEN}", "type": "PLAINTEXT"}
                   ]
                 
         - Name: "Deploy"

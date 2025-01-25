@@ -30,8 +30,8 @@ GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECR
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
 AUTH_TYPE = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AuthType')
 SERVER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.Server')
-DOCKER_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.DOCKER_TOKEN')
-DOCKER_USERNAME = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.DOCKER_USERNAME')
+DOCKERTOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.DOCKERTOKEN')
+DOCKERUSERNAME = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.DOCKERUSERNAME')
 	
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
@@ -130,8 +130,8 @@ build-push-image:
 			"name=GITHUB_OWNER,value=$(GITHUB_OWNER),type=PLAINTEXT" \
 			"name=GITHUB_REPO,value=$(GITHUB_REPO),type=PLAINTEXT" \
 			"name=AUTH_TYPE,value=$(AUTH_TYPE),type=PLAINTEXT" \
-			"name=DOCKER_TOKEN,value=$(DOCKER_TOKEN),type=PLAINTEXT" \
-			"name=DOCKER_USERNAME,value=$(DOCKER_USERNAME),type=PLAINTEXT" \
+			"name=DOCKERTOKEN,value=$(DOCKERTOKEN),type=PLAINTEXT" \
+			"name=DOCKERUSERNAME,value=$(DOCKERUSERNAME),type=PLAINTEXT" \
 			"name=SERVER,value=$(SERVER),type=PLAINTEXT"
 	@echo "Build process triggered successfully!"
 
@@ -150,8 +150,8 @@ deploy-ecs:
 			GitHubOAuthToken=$(GITHUB_TOKEN) \
 			GitHubRepo=$(GITHUB_REPO) \
 			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
-			DOCKER_USERNAME=$(DOCKER_USERNAME) \
-			DOCKER_TOKEN=$(DOCKER_TOKEN) \
+			DOCKERUSERNAME=$(DOCKERUSERNAME) \
+			DOCKERTOKEN=$(DOCKERTOKEN) \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # Generate imagedefinitions.json
@@ -180,8 +180,8 @@ deploy-cloudformation:
 			SubnetIds=$(SUBNET_IDS) \
 			ProjectName=$(PROJECT_NAME) \
 			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
-			DOCKER_USERNAME=$(DOCKER_USERNAME) \
-			DOCKER_TOKEN=$(DOCKER_TOKEN) \
+			DOCKERUSERNAME=$(DOCKERUSERNAME) \
+			DOCKERTOKEN=$(DOCKERTOKEN) \
 			CreateArtifactBucket=true \
 			CreateCodeBuild=false \
 			CreateECRCondition=false \
