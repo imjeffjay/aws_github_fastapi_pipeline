@@ -11,6 +11,12 @@ Parameters:
   GitHubRepo:
     Type: String
     Description: "GitHub repository name"
+  DOCKER_USERNAME:
+    Type: String
+    Description: "Docker Hub username for authentication"
+  DOCKER_TOKEN:
+    Type: String
+    Description: "Docker Hub personal access token for authentication"
   AWSRegion:
     Type: String
     Default: "us-east-1"
@@ -189,10 +195,10 @@ Resources:
                 - Name: "BuildOutput"
               Configuration:
                 ProjectName: !Ref ProjectName
-                EnvironmentVariablesOverride: |
+                EnvironmentVariablesOverride: !Sub |
                   [
-                    {"name": "DOCKER_USERNAME", "value": "your-docker-username", "type": "PLAINTEXT"},
-                    {"name": "DOCKER_TOKEN", "value": "your-docker-token", "type": "PLAINTEXT"}
+                    {"name": "DOCKER_USERNAME", "value": "${DOCKER_USERNAME}", "type": "PLAINTEXT"},
+                    {"name": "DOCKER_TOKEN", "value": "${DOCKER_TOKEN}", "type": "PLAINTEXT"}
                   ]
                 
         - Name: "Deploy"
