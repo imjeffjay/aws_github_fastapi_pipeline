@@ -11,6 +11,8 @@ phases:
       - echo "SERVER=$SERVER"
       - echo "Authenticating to GitHub..."
       - echo "Authenticating to Docker Hub..."
+      - echo "DOCKER_USERNAME=${DOCKER_USERNAME}"
+      - echo "DOCKER_TOKEN=${DOCKER_TOKEN:0:4}****" # Mask most of the token for security
       - echo "$DOCKER_TOKEN" | docker login --username "$DOCKER_USERNAME" --password-stdin
       - git config --global user.name "$(GITHUB_OWNER)"
       - git config --global user.email "$(GITHUB_OWNER)@users.noreply.github.com"

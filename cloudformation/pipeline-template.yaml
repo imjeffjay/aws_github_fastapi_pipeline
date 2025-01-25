@@ -131,6 +131,11 @@ Resources:
         Image: aws/codebuild/standard:5.0
         PrivilegedMode: true
         Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: DOCKER_USERNAME
+            Value: !Ref DOCKER_USERNAME
+          - Name: DOCKER_TOKEN
+            Value: !Ref DOCKER_TOKEN
       ServiceRole: !Ref CodePipelineRoleArn
       Artifacts:
         Type: NO_ARTIFACTS
@@ -184,6 +189,12 @@ Resources:
                 - Name: "BuildOutput"
               Configuration:
                 ProjectName: !Ref ProjectName
+                EnvironmentVariablesOverride: |
+                  [
+                    {"name": "DOCKER_USERNAME", "value": "your-docker-username", "type": "PLAINTEXT"},
+                    {"name": "DOCKER_TOKEN", "value": "your-docker-token", "type": "PLAINTEXT"}
+                  ]
+                
         - Name: "Deploy"
           Actions:
             - Name: "Deploy"
