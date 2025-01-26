@@ -34,3 +34,5 @@ make build-ecr
 make create-codestar-connection
 make build-iam-role
 make create-codebuild-project
+
+cd aws_github_fastapi_pipeline

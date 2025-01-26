@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "CloudFormation template for setting up one-time resources (IAM Role, ECR, Artifact Bucket, ECS Cluster, and CodeBuild project)."
+Parameters:
+  GitHubOAuthToken:
+    Type: String
+    Description: "GitHub OAuth token for accessing the repository"
+  GitHubOwner:
+    Type: String
+    Description: "GitHub repository owner"
+  GitHubRepo:
+    Type: String
+    Description: "GitHub repository name"
+  SecretArn:
+    Type: String
+    Description: "ARN of the first secret for CodeBuild to access"
+  DOCKERUSERNAME:
+    Type: String
+    Description: "Docker Hub username for authentication"
+  DOCKERTOKEN:
+    Type: String
+    Description: "Docker Hub personal access token for authentication"
+  AWSRegion:
+    Type: String
+    Default: "us-east-1"
+    Description: "AWS Region"
+  AWSAccountId:
+    Type: String
+    Default: !Ref "AWS::AccountId"
+    Description: "The AWS Account ID"
+  CodePipelineRoleArn:
+    Type: String
+    Description: "ARN of the CodePipeline IAM Role"
+  ECRRepoName:
+    Type: String
+    Default: "fastapi-app"
+    Description: "ECR repository name"
+  ClusterName:
+    Type: String
+    Default: "FastAPICluster"
+    Description: "ECS Cluster Name"
+  ArtifactBucketName:
+    Type: String
+    Default: !Sub "${AWSAccountId}-codepipeline-artifacts-${AWSRegion}"
+    Description: "S3 bucket for CodePipeline artifacts"
+  ProjectName:
+    Type: String
+    Default: "FastAPIBuildProject"
+    Description: "CodeBuild Project Name"
+
+
+Resources:
+
+  # ECR Repository
+  ECRRepository:
+    Type: "AWS::ECR::Repository"
+    Properties:
+      RepositoryName: !Ref ECRRepoName
+
+  # Artifact Bucket
+  ArtifactBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref ArtifactBucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # ECS Cluster
+  ECSCluster:
+    Type: "AWS::ECS::Cluster"
+    Properties:
+      ClusterName: !Ref ClusterName
+
+  # CodeBuild Project
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Ref ProjectName
+      Source:
+        Type: GITHUB
+        Location: !Sub "https://github.com/${GitHubOwner}/${GitHubRepo}.git"
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0
+        PrivilegedMode: true
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: AWS_REGION
+            Value: !Ref AWSRegion
+          - Name: ECR_REPO_NAME
+            Value: !Ref ECRRepoName
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref AWSAccountId
+      ServiceRole: !Ref CodePipelineRoleArn
+ 
+
+Outputs:
+  ECRRepositoryUri:
+    Description: "URI of the ECR Repository"
+    Value: !Sub "${AWSAccountId}.dkr.ecr.${AWSRegion}.amazonaws.com/${ECRRepoName}"
+  ArtifactBucketName:
+    Description: "Name of the artifact bucket"
+    Value: !Ref ArtifactBucket
+  ECSClusterName:
+    Description: "Name of the ECS Cluster"
+    Value: !Ref ECSCluster
+  CodeBuildProjectName:
+    Description: "Name of the CodeBuild Project"
+    Value: !Ref CodeBuildProject

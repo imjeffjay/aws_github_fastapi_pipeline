@@ -2,37 +2,41 @@
 # Static Variables
 # ====================
 TEMPLATE_DIR = cloudformation
-PIPELINE_TEMPLATE = $(TEMPLATE_DIR)/pipeline-template.yaml
+
 IAM_TEMPLATE = $(TEMPLATE_DIR)/iam-template.yaml
-STACK_NAME = FastAPIPipelineStack
-AWS_REGION = us-east-1
-TASK_FAMILY = fastapi-task
-CONTAINER_NAME = fastapi-container
-IAM_STACK_NAME = FastAPI-IAMStack
-PROJECT_NAME = FastAPIBuildProject
-ECR_REPO_NAME = fastapi-app
-IMAGE_TAG = latest
+SETUP_TEMPLATE = setup-resources.yaml
+PIPELINE_TEMPLATE = $(TEMPLATE_DIR)/pipeline-template.yaml
 CONFIG_DIR = configs
 IMAGEDef_FILE = $(CONFIG_DIR)/imagedefinitions.json
-CLUSTER_NAME = FastAPICluster # Define the cluster name here
+IMAGE_TAG = latest
+
+AWS_REGION = us-east-1
+
+STACK_NAME = FastAPIPipelineStack2
+TASK_FAMILY = fastapi-task2
+CONTAINER_NAME = fastapi-container2
+IAM_STACK_NAME = FastAPI-IAMStack2
+PROJECT_NAME = FastAPIBuildProject2
+ECR_REPO_NAME = fastapi-app2
+CLUSTER_NAME = FastAPICluster2 
+ARTIFACT_BUCKET_NAME = $(AWS_ACCOUNT_ID)-codepipeline-artifacts-$(AWS_REGION)
 
 # ====================
 # Dynamic Variables
 # ====================
 
 AWSSECRETS = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].Name" --output text)
-AWSSECRETS2 = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='codebuild'].Name" --output text)
-SECRET_ARN1 = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].ARN" --output text)
-SECRET_ARN2 = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='codebuild'].ARN" --output text)
-
+SECRET_ARN = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].ARN" --output text)
 GITHUB_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.Token')
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
-GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo')
+GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo2')
 AUTH_TYPE = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AuthType')
 SERVER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.Server')
 DOCKERTOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.DOCKERTOKEN')
 DOCKERUSERNAME = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.DOCKERUSERNAME')
-	
+AWS_ACCOUNT_ID = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AWS_ACCOUNT_ID')
+AWS_REGION = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AWS_REGION')
+
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
 	--logical-resource-id CodePipelineRole \
@@ -49,7 +53,6 @@ IAM_ROLE_ARN = $(shell aws iam get-role \
 	--role-name $(IAM_ROLE_NAME) \
 	--query "Role.Arn" --output text)
 
-AWS_ACCOUNT_ID = $(shell aws sts get-caller-identity --query Account --output text)
 DOCKER_IMAGE = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(ECR_REPO_NAME):$(IMAGE_TAG)
 
 # Fetch default VPC ID
@@ -67,18 +70,6 @@ SUBNET_IDS = $(shell aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(VP
 # Workflow
 # ====================
 
-# create the ECR repository
-build-ecr:
-	@echo "Creating ECR repository: $(ECR_REPO_NAME)..."
-	aws ecr create-repository --repository-name $(ECR_REPO_NAME) || echo "ECR repository $(ECR_REPO_NAME) already exists."
-	@echo "Repo created successfully!"
-
-# Authenticate Docker with ECR
-auth-ecr:
-	@echo "Authenticating Docker with ECR..."
-	aws ecr get-login-password --region $(AWS_REGION) | \
-	docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
-
 # Build IAM Role
 build-iam-role:
 	@echo "Deploying IAM roles..."
@@ -87,35 +78,32 @@ build-iam-role:
 		--stack-name $(IAM_STACK_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--parameter-overrides \
-			SecretArn1=$(SECRET_ARN1) \
-			SecretArn2=$(SECRET_ARN2)
+			SecretArn=$(SECRET_ARN) \
 	@echo "IAM roles deployed successfully!"
 
-create-codebuild-project:
-	@echo "Creating CodeBuild project: $(PROJECT_NAME)..."
-	aws codebuild create-project \
-		--name $(PROJECT_NAME) \
-		--source "{\"type\":\"GITHUB\",\"location\":\"https://github.com/$(GITHUB_OWNER)/$(GITHUB_REPO).git\"}" \
-		--artifacts type=NO_ARTIFACTS \
-		--service-role $(IAM_ROLE_ARN) \
-		--environment "{\"type\":\"LINUX_CONTAINER\",\"image\":\"aws/codebuild/standard:5.0\",\"computeType\":\"BUILD_GENERAL1_SMALL\",\"privilegedMode\":true,\"environmentVariables\":[ \
-			{\"name\":\"AWS_REGION\",\"value\":\"$(AWS_REGION)\",\"type\":\"PLAINTEXT\"}, \
-			{\"name\":\"ECR_REPO_NAME\",\"value\":\"$(ECR_REPO_NAME)\",\"type\":\"PLAINTEXT\"}, \
-			{\"name\":\"AWS_ACCOUNT_ID\",\"value\":\"$(AWS_ACCOUNT_ID)\",\"type\":\"PLAINTEXT\"}, \
-			{\"name\":\"AWSSECRETS\",\"value\":\"$(AWSSECRETS)\",\"type\":\"PLAINTEXT\"}, \
-			{\"name\":\"AWSSECRETS2\",\"value\":\"$(AWSSECRETS2)\",\"type\":\"PLAINTEXT\"} \
-		]}"
-	@echo "CodeBuild project created successfully!"
-	@while true; do \
-		status=$$(aws codebuild list-projects --query "projects" --output text | grep -w $(PROJECT_NAME)); \
-		if [ ! -z "$$status" ]; then \
-			echo "CodeBuild project $(PROJECT_NAME) is ready."; \
-			break; \
-		fi; \
-		echo "Still waiting for CodeBuild project..."; \
-		sleep 5; \
-	done
-	@echo "CodeBuild project created successfully and ready!"
+
+# Deploy One-Time Setup Resources
+deploy-setup-resources:
+	@echo "Deploying one-time setup resources (ECR, ArtifactBucket, ECS Cluster, CodeBuild Project)..."
+	aws cloudformation deploy \
+		--template-file $(SETUP_TEMPLATE) \
+		--stack-name $(STACK_NAME) \
+		--parameter-overrides \
+			ProjectName=$(PROJECT_NAME) \
+			ECRRepoName=$(ECR_REPO_NAME) \
+			ClusterName=$(CLUSTER_NAME) \
+			ArtifactBucketName=$(ARTIFACT_BUCKET_NAME) \
+			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
+			GitHubRepo=$(GITHUB_REPO) \
+			GitHubOwner=$(GITHUB_OWNER) \
+			AWSRegion=$(AWS_REGION) \
+			AWSAccountId=$(AWS_ACCOUNT_ID) \
+		--capabilities CAPABILITY_NAMED_IAM
+
+###############################
+###############################
+###############################
+
 
 # Trigger CodeBuild to build and push Docker image
 build-push-image:
@@ -191,7 +179,7 @@ deploy-cloudformation:
 # Combined Workflow
 # ====================
 
-# All-in-One Deployment
-deploy-all: build-iam-role build-ecr create-codebuild-project build-push-image deploy-cloudformation
-	@echo "All services successfully deployed!"
+
+
+
 
