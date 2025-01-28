@@ -6,20 +6,27 @@ TEMPLATE_DIR = cloudformation
 IAM_TEMPLATE = $(TEMPLATE_DIR)/iam-template.yaml
 SETUP_TEMPLATE = setup-resources.yaml
 PIPELINE_TEMPLATE = $(TEMPLATE_DIR)/pipeline-template.yaml
+
 CONFIG_DIR = configs
 IMAGEDef_FILE = $(CONFIG_DIR)/imagedefinitions.json
 IMAGE_TAG = latest
 
-AWS_REGION = us-east-1
-
-STACK_NAME = FastAPIPipelineStack2
-TASK_FAMILY = fastapi-task2
-CONTAINER_NAME = fastapi-container2
-IAM_STACK_NAME = FastAPI-IAMStack2
-PROJECT_NAME = FastAPIBuildProject2
-ECR_REPO_NAME = fastapi-app2
-CLUSTER_NAME = FastAPICluster2 
+PROJECT_PREFIX = fastapi2
+STACK_NAME = $(PROJECT_PREFIX)-stack
+TASK_FAMILY = $(PROJECT_PREFIX)-task
+CONTAINER_NAME = $(PROJECT_PREFIX)-container
+IAM_STACK_NAME = $(PROJECT_PREFIX)-IAMStack
+PROJECT_NAME = $(PROJECT_PREFIX)-project
+ECR_REPO_NAME = $(PROJECT_PREFIX)-app
+CLUSTER_NAME = $(PROJECT_PREFIX)-cluster
 ARTIFACT_BUCKET_NAME = $(AWS_ACCOUNT_ID)-codepipeline-artifacts-$(AWS_REGION)
+
+ARTIFACT_BUCKET_PARAM = $(shell \
+	if aws s3api head-bucket --bucket $(ARTIFACT_BUCKET_NAME) 2>/dev/null; then \
+		echo "ArtifactBucketName=$(ARTIFACT_BUCKET_NAME)"; \
+	else \
+		echo ""; \
+	fi)
 
 # ====================
 # Dynamic Variables
@@ -92,7 +99,7 @@ deploy-setup-resources:
 			ProjectName=$(PROJECT_NAME) \
 			ECRRepoName=$(ECR_REPO_NAME) \
 			ClusterName=$(CLUSTER_NAME) \
-			ArtifactBucketName=$(ARTIFACT_BUCKET_NAME) \
+			$(ARTIFACT_BUCKET_PARAM) \
 			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
 			GitHubRepo=$(GITHUB_REPO) \
 			GitHubOwner=$(GITHUB_OWNER) \

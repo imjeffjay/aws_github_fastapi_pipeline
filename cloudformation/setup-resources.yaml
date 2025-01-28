@@ -40,12 +40,15 @@ Parameters:
     Description: "ECS Cluster Name"
   ArtifactBucketName:
     Type: String
-    Default: !Sub "${AWSAccountId}-codepipeline-artifacts-${AWSRegion}"
-    Description: "S3 bucket for CodePipeline artifacts"
+    Default: ""
+    Description: "The name of the S3 bucket for CodePipeline artifacts. Leave empty to create a new bucket."
   ProjectName:
     Type: String
     Default: "FastAPIBuildProject"
     Description: "CodeBuild Project Name"
+
+Conditions:
+  CreateArtifactBucket: !Equals [!Ref ArtifactBucketName, ""]
 
 
 Resources:
@@ -58,6 +61,7 @@ Resources:
 
   # Artifact Bucket
   ArtifactBucket:
+    Condition: CreateArtifactBucket
     Type: "AWS::S3::Bucket"
     Properties:
       BucketName: !Ref ArtifactBucketName
@@ -103,8 +107,11 @@ Outputs:
     Description: "URI of the ECR Repository"
     Value: !Sub "${AWSAccountId}.dkr.ecr.${AWSRegion}.amazonaws.com/${ECRRepoName}"
   ArtifactBucketName:
-    Description: "Name of the artifact bucket"
-    Value: !Ref ArtifactBucket
+    Description: "The name of the artifact bucket"
+    Value: !If
+      - CreateArtifactBucket
+      - !Sub "${AWSAccountId}-codepipeline-artifacts-${AWSRegion}"
+      - !Ref ArtifactBucketName
   ECSClusterName:
     Description: "Name of the ECS Cluster"
     Value: !Ref ECSCluster
