@@ -85,7 +85,7 @@ build-iam-role:
 		--stack-name $(IAM_STACK_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--parameter-overrides \
-			SecretArn=$(SECRET_ARN) \
+			SecretArn=$(SECRET_ARN)
 	@echo "IAM roles deployed successfully!"
 
 
