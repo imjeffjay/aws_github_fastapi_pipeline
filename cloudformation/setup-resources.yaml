@@ -25,7 +25,6 @@ Parameters:
     Description: "AWS Region"
   AWSAccountId:
     Type: String
-    Default: !Ref "AWS::AccountId"
     Description: "The AWS Account ID"
   CodePipelineRoleArn:
     Type: String
@@ -40,7 +39,7 @@ Parameters:
     Description: "ECS Cluster Name"
   ArtifactBucketName:
     Type: String
-    Default: ""
+    Default: "TBD"
     Description: "The name of the S3 bucket for CodePipeline artifacts. Leave empty to create a new bucket."
   ProjectName:
     Type: String
