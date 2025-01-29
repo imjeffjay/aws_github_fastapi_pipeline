@@ -25,7 +25,7 @@ ARTIFACT_BUCKET_PARAM = $(shell \
 	if aws s3api head-bucket --bucket $(ARTIFACT_BUCKET_NAME) 2>/dev/null; then \
 		echo "ArtifactBucketName=$(ARTIFACT_BUCKET_NAME)"; \
 	else \
-		echo ""; \
+		echo "ArtifactBucketName="; \
 	fi)
 
 # ====================

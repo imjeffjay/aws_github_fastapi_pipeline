@@ -47,7 +47,7 @@ Parameters:
     Description: "CodeBuild Project Name"
 
 Conditions:
-  CreateArtifactBucket: !Equals [!Ref ArtifactBucketName, ""]
+  CreateArtifactBucket: !Not [!Equals [!Ref ArtifactBucketName, ""]]
 
 
 Resources:
