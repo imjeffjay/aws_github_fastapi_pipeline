@@ -35,8 +35,7 @@ Resources:
                   - "secretsmanager:GetSecretValue"
                   - "secretsmanager:DescribeSecret"
                 Resource:
-                  - !Ref SecretArn1
-                  - !Ref SecretArn2
+                  - !Ref SecretArn
               - Effect: Allow
                 Action:
                   - "iam:PassRole"
