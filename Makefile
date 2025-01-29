@@ -4,7 +4,7 @@
 TEMPLATE_DIR = cloudformation
 
 IAM_TEMPLATE = $(TEMPLATE_DIR)/iam-template.yaml
-SETUP_TEMPLATE = setup-resources.yaml
+SETUP_TEMPLATE = $(TEMPLATE_DIR)/setup-resources.yaml
 PIPELINE_TEMPLATE = $(TEMPLATE_DIR)/pipeline-template.yaml
 
 CONFIG_DIR = configs
