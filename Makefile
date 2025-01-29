@@ -21,13 +21,6 @@ ECR_REPO_NAME = $(PROJECT_PREFIX)-app
 CLUSTER_NAME = $(PROJECT_PREFIX)-cluster
 ARTIFACT_BUCKET_NAME = $(AWS_ACCOUNT_ID)-codepipeline-artifacts-$(AWS_REGION)
 
-ARTIFACT_BUCKET_PARAM = $(shell \
-	if aws s3api head-bucket --bucket $(ARTIFACT_BUCKET_NAME) 2>/dev/null; then \
-		echo "ArtifactBucketName=$(ARTIFACT_BUCKET_NAME)"; \
-	else \
-		echo "ArtifactBucketName="; \
-	fi)
-
 # ====================
 # Dynamic Variables
 # ====================
@@ -99,7 +92,7 @@ deploy-setup-resources:
 			ProjectName=$(PROJECT_NAME) \
 			ECRRepoName=$(ECR_REPO_NAME) \
 			ClusterName=$(CLUSTER_NAME) \
-			$(ARTIFACT_BUCKET_PARAM) \
+			ArtifactBucketName=$(ARTIFACT_BUCKET_NAME) \
 			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
 			GitHubRepo=$(GITHUB_REPO) \
 			GitHubOwner=$(GITHUB_OWNER) \

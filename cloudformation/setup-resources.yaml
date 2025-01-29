@@ -46,10 +46,6 @@ Parameters:
     Default: "FastAPIBuildProject"
     Description: "CodeBuild Project Name"
 
-Conditions:
-  CreateArtifactBucket: !Not [!Equals [!Ref ArtifactBucketName, ""]]
-
-
 Resources:
 
   # ECR Repository
@@ -60,7 +56,6 @@ Resources:
 
   # Artifact Bucket
   ArtifactBucket:
-    Condition: CreateArtifactBucket
     Type: "AWS::S3::Bucket"
     Properties:
       BucketName: !Ref ArtifactBucketName
