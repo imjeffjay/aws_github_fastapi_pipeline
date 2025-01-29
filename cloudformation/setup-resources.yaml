@@ -102,10 +102,7 @@ Outputs:
     Value: !Sub "${AWSAccountId}.dkr.ecr.${AWSRegion}.amazonaws.com/${ECRRepoName}"
   ArtifactBucketName:
     Description: "The name of the artifact bucket"
-    Value: !If
-      - CreateArtifactBucket
-      - !Sub "${AWSAccountId}-codepipeline-artifacts-${AWSRegion}"
-      - !Ref ArtifactBucketName
+    Value: !Ref ArtifactBucketName
   ECSClusterName:
     Description: "Name of the ECS Cluster"
     Value: !Ref ECSCluster
