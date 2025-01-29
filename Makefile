@@ -103,8 +103,12 @@ deploy-setup-resources:
 			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
 			GitHubRepo=$(GITHUB_REPO) \
 			GitHubOwner=$(GITHUB_OWNER) \
+			GitHubOAuthToken=$(GITHUB_TOKEN) \
 			AWSRegion=$(AWS_REGION) \
 			AWSAccountId=$(AWS_ACCOUNT_ID) \
+			DOCKERUSERNAME=$(DOCKERUSERNAME) \
+			DOCKERTOKEN=$(DOCKERTOKEN) \
+			SecretArn=$(SECRET_ARN) \
 		--capabilities CAPABILITY_NAMED_IAM
 
 ###############################
