@@ -184,7 +184,7 @@ generate-imagedefinitions:
 
 
 # Deploy CodePipeline
-deploy-pipeline:
+deploy-cloudformation:
 	@echo "Deploying CloudFormation stack..."
 	@echo "IAM_ROLE_ARN=$(IAM_ROLE_ARN)"
 	aws cloudformation deploy \

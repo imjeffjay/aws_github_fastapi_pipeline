@@ -197,4 +197,4 @@ Outputs:
     Value: !Ref ClusterName
   TaskDefinition:
     Description: "The ECS Task Definition"
-    Value: !Ref ECSTaskDefinition"
+    Value: !Ref ECSTaskDefinition
