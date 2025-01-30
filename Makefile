@@ -107,20 +107,30 @@ deploy-setup-resources:
 
 ### Step 3 - Run once per project  ###
 deploy-pipeline:
-	@echo "Deploying CodePipeline..."
+	@echo "Deploying CloudFormation stack..."
+	@echo "IAM_ROLE_ARN=$(IAM_ROLE_ARN)"
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
-		--stack-name $(PIPELINE_STACK_NAME) \
+		--stack-name $(STACK_NAME) \
 		--parameter-overrides \
-			ProjectName=$(PROJECT_NAME) \
-			ECRRepoName=$(ECR_REPO_NAME) \
-			ClusterName=$(CLUSTER_NAME) \
-			ArtifactBucketName=$(ARTIFACT_BUCKET_NAME) \
-			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
-			GitHubRepo=$(GITHUB_REPO) \
+			GitHubOAuthToken=$(GITHUB_TOKEN) \
 			GitHubOwner=$(GITHUB_OWNER) \
-			GitHubOAuthToken=$(GITHUB_TOKEN)		
-	@echo "CodePipeline deployed successfully!"
+			GitHubRepo=$(GITHUB_REPO) \
+			AWSRegion=$(AWS_REGION) \
+			AWSAccountId=$(AWS_ACCOUNT_ID) \
+			AuthType=$(AUTH_TYPE) \
+			Server=$(SERVER) \
+			RepositoryName=$(ECR_REPO_NAME) \
+			ClusterName=$(CLUSTER_NAME) \
+			TaskFamily=$(TASK_FAMILY) \
+			ContainerName=$(CONTAINER_NAME) \
+			SubnetIds=$(SUBNET_IDS) \
+			ProjectName=$(PROJECT_NAME) \
+			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
+			DOCKERUSERNAME=$(DOCKERUSERNAME) \
+			DOCKERTOKEN=$(DOCKERTOKEN) \
+		--capabilities CAPABILITY_NAMED_IAM
+
 
 
 
@@ -174,7 +184,7 @@ generate-imagedefinitions:
 
 
 # Deploy CodePipeline
-deploy-cloudformation:
+deploy-pipeline:
 	@echo "Deploying CloudFormation stack..."
 	@echo "IAM_ROLE_ARN=$(IAM_ROLE_ARN)"
 	aws cloudformation deploy \
@@ -185,6 +195,9 @@ deploy-cloudformation:
 			GitHubOwner=$(GITHUB_OWNER) \
 			GitHubRepo=$(GITHUB_REPO) \
 			AWSRegion=$(AWS_REGION) \
+			AWSAccountId=$(AWS_ACCOUNT_ID) \
+			AuthType=$(AUTH_TYPE) \
+			Server=$(SERVER) \
 			RepositoryName=$(ECR_REPO_NAME) \
 			ClusterName=$(CLUSTER_NAME) \
 			TaskFamily=$(TASK_FAMILY) \
@@ -194,9 +207,6 @@ deploy-cloudformation:
 			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
 			DOCKERUSERNAME=$(DOCKERUSERNAME) \
 			DOCKERTOKEN=$(DOCKERTOKEN) \
-			CreateArtifactBucket=true \
-			CreateCodeBuild=false \
-			CreateECRCondition=false \
 		--capabilities CAPABILITY_NAMED_IAM
 
 # ====================
