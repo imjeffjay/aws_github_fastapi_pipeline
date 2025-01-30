@@ -70,6 +70,7 @@ SUBNET_IDS = $(shell aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(VP
 # Workflow
 # ====================
 
+### Step 1 - Run once per project  ###
 # Build IAM Role
 build-iam-role:
 	@echo "Deploying IAM roles..."
@@ -81,7 +82,7 @@ build-iam-role:
 			SecretArn=$(SECRET_ARN)
 	@echo "IAM roles deployed successfully!"
 
-
+### Step 2 - Run once per project  ###
 # Deploy One-Time Setup Resources
 deploy-setup-resources:
 	@echo "Deploying one-time setup resources (ECR, ArtifactBucket, ECS Cluster, CodeBuild Project)..."
@@ -103,6 +104,25 @@ deploy-setup-resources:
 			DOCKERTOKEN=$(DOCKERTOKEN) \
 			SecretArn=$(SECRET_ARN) \
 		--capabilities CAPABILITY_NAMED_IAM
+
+### Step 3 - Run once per project  ###
+deploy-pipeline:
+	@echo "Deploying CodePipeline..."
+	aws cloudformation deploy \
+		--template-file $(PIPELINE_TEMPLATE) \
+		--stack-name $(PIPELINE_STACK_NAME) \
+		--parameter-overrides \
+			ProjectName=$(PROJECT_NAME) \
+			ECRRepoName=$(ECR_REPO_NAME) \
+			ClusterName=$(CLUSTER_NAME) \
+			ArtifactBucketName=$(ARTIFACT_BUCKET_NAME) \
+			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
+			GitHubRepo=$(GITHUB_REPO) \
+			GitHubOwner=$(GITHUB_OWNER) \
+			GitHubOAuthToken=$(GITHUB_TOKEN)		
+	@echo "CodePipeline deployed successfully!"
+
+
 
 ###############################
 ###############################

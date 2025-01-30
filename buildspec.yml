@@ -29,12 +29,14 @@ phases:
       - echo "Pushing Docker image to ECR..."
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
       - echo "Docker image pushed successfully!"
+      - echo "Generating imagedefinitions.json..."
+      - echo '[{"name":"fastapi-container","imageUri":"'$AWS_ACCOUNT_ID'.dkr.ecr.'$AWS_REGION'.amazonaws.com/'$ECR_REPO_NAME':latest"}]' > imagedefinitions.json
+      - cat imagedefinitions.json      
 
 env:
   variables:
     AWS_REGION: "us-east-1"
     AWS_ACCOUNT_ID: "475634715655"
-    ECR_REPO_NAME: "fastapi-app"
     AUTH_TYPE: "PERSONAL_ACCESS_TOKEN"
     SERVER: "GitHub"
 

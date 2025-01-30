@@ -21,7 +21,10 @@ Parameters:
     Type: String
     Default: "us-east-1"
     Description: "AWS Region"
-  RepositoryName:
+  AWSAccountId:
+    Type: String
+    Description: "AWS Account ID"
+  ECRRepoName:
     Type: String
     Default: "fastapi-app"
     Description: "ECR Repository Name"
@@ -44,51 +47,22 @@ Parameters:
     Type: String
     Default: "FastAPIBuildProject"
     Description: "CodeBuild Project Name"
+  ArtifactBucketName:
+    Type: String
+    Description: "Artifact bucket for pipeline storage"
   CodePipelineRoleArn:
     Type: String
     Description: "ARN of the CodePipeline IAM Role"
-  CreateECR:
+  AuthType:
     Type: String
-    Default: "false"
-    AllowedValues:
-      - "true"
-      - "false"
-    Description: "Whether to create the ECR repository"
-  CreateCodeBuild:
+    Default: "PERSONAL_ACCESS_TOKEN"
+    Description: "Authentication type for GitHub (e.g., PERSONAL_ACCESS_TOKEN)"
+  Server:
     Type: String
-    Default: "false"
-    AllowedValues:
-      - "true"
-      - "false"
-    Description: "Whether to create the CodeBuild project"
-  CreateArtifactBucket:
-    Type: String
-    Default: "true"
-    AllowedValues:
-      - "true"
-      - "false"
-    Description: "Whether to create the artifact bucket"
-
-Conditions:
-  CreateECRCondition: !Equals [!Ref CreateECR, "true"]
-  CreateCodeBuildCondition: !Equals [!Ref CreateCodeBuild, "true"]
-  CreateArtifactBucketCondition: !Equals [!Ref CreateArtifactBucket, "true"]
+    Default: "GitHub"
+    Description: "The source control server (e.g., GitHub, Bitbucket)"
 
 Resources:
-  # ECR Repository
-  ECRRepository:
-    Condition: CreateECRCondition
-    Type: "AWS::ECR::Repository"
-    Properties:
-      RepositoryName: !Ref RepositoryName
-
-  # ECS Cluster
-  ECSCluster:
-    Type: "AWS::ECS::Cluster"
-    Properties:
-      ClusterName: !Ref ClusterName
-
-  # ECS Task Definition
   ECSTaskDefinition:
     Type: "AWS::ECS::TaskDefinition"
     Properties:
@@ -101,7 +75,7 @@ Resources:
       ExecutionRoleArn: !Ref CodePipelineRoleArn
       ContainerDefinitions:
         - Name: !Ref ContainerName
-          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${RepositoryName}:latest"
+          Image: !Sub "${AWSAccountId}.dkr.ecr.${AWSRegion}.amazonaws.com/${ECRRepoName}:latest"
           Memory: 512
           Cpu: 256
           PortMappings:
@@ -111,7 +85,7 @@ Resources:
   ECSService:
     Type: "AWS::ECS::Service"
     Properties:
-      Cluster: !Ref ECSCluster
+      Cluster: !Ref ClusterName
       DesiredCount: 1
       TaskDefinition: !Ref ECSTaskDefinition
       LaunchType: "FARGATE"
@@ -122,7 +96,6 @@ Resources:
 
   # CodeBuild Project
   CodeBuildProject:
-    Condition: CreateCodeBuildCondition
     Type: AWS::CodeBuild::Project
     Properties:
       Name: !Ref ProjectName
@@ -138,24 +111,29 @@ Resources:
         PrivilegedMode: true
         Type: LINUX_CONTAINER
         EnvironmentVariables:
-          - Name: DOCKERUSERNAME
-            Value: !Ref DOCKERUSERNAME
+          - Name: AWS_REGION
+            Value: !Ref AWSRegion
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref AWSAccountId
+          - Name: ECR_REPO_NAME
+            Value: !Ref ECRRepoName
+          - Name: GITHUB_TOKEN
+            Value: !Ref GitHubOAuthToken
+          - Name: GITHUB_OWNER
+            Value: !Ref GitHubOwner
+          - Name: GITHUB_REPO
+            Value: !Ref GitHubRepo
+          - Name: AUTH_TYPE
+            Value: !Ref AuthType
           - Name: DOCKERTOKEN
             Value: !Ref DOCKERTOKEN
+          - Name: DOCKERUSERNAME
+            Value: !Ref DOCKERUSERNAME
+          - Name: SERVER
+            Value: !Ref Server
       ServiceRole: !Ref CodePipelineRoleArn
       Artifacts:
         Type: NO_ARTIFACTS
-
-  ArtifactBucket:
-    Condition: CreateArtifactBucketCondition
-    Type: "AWS::S3::Bucket"
-    Properties:
-      BucketName: !Sub "${AWS::AccountId}-codepipeline-artifacts-${AWS::Region}"
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
 
   # CodePipeline
   CodePipeline:
@@ -164,7 +142,7 @@ Resources:
       RoleArn: !Ref CodePipelineRoleArn
       ArtifactStore:
         Type: S3
-        Location: !Ref ArtifactBucket
+        Location: !Ref ArtifactBucketName
       Stages:
         - Name: "Source"
           Actions:
@@ -195,12 +173,6 @@ Resources:
                 - Name: "BuildOutput"
               Configuration:
                 ProjectName: !Ref ProjectName
-                EnvironmentVariablesOverride: !Sub |
-                  [
-                    {"name": "DOCKERUSERNAME", "value": "${DOCKERUSERNAME}", "type": "PLAINTEXT"},
-                    {"name": "DOCKERTOKEN", "value": "${DOCKERTOKEN}", "type": "PLAINTEXT"}
-                  ]
-                
         - Name: "Deploy"
           Actions:
             - Name: "Deploy"
@@ -212,17 +184,17 @@ Resources:
               InputArtifacts:
                 - Name: "BuildOutput"
               Configuration:
-                ClusterName: !Ref ECSCluster
+                ClusterName: !Ref ClusterName
                 ServiceName: !Ref ECSService
                 FileName: "imagedefinitions.json"
 
 Outputs:
   PipelineName:
-    Description: "The name of the CodePipeline"
+    Description: "The CodePipeline Name"
     Value: !Ref CodePipeline
   ClusterName:
-    Description: "The name of the ECS Cluster"
-    Value: !Ref ECSCluster
+    Description: "The ECS Cluster Name"
+    Value: !Ref ClusterName
   TaskDefinition:
     Description: "The ECS Task Definition"
-    Value: !Ref ECSTaskDefinition
+    Value: !Ref ECSTaskDefinition"
