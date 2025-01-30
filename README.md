@@ -36,3 +36,11 @@ make build-iam-role
 make create-codebuild-project
 
 cd aws_github_fastapi_pipeline
+
+
+DEBUG:
+
+aws ecs describe-services --cluster fastapi2-cluster --services fastapi2-stack-ECSService-7imEEOSwP5pD
+aws ecs describe-task-definition --task-definition fastapi2-task
+
+aws cloudformation describe-stack-events --stack-name fastapi2-stack

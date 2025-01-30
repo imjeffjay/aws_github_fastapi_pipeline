@@ -18,6 +18,7 @@ Resources:
               Service:
                 - "codepipeline.amazonaws.com"
                 - "codebuild.amazonaws.com"
+                - "ecs-tasks.amazonaws.com"
             Action: "sts:AssumeRole"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
@@ -81,6 +82,10 @@ Resources:
                   - "ecs:StopTask"
                   - "ecs:DescribeTasks"
                   - "ecs:ListTaskDefinitions"
+                  - "ecs:RegisterTaskDefinition"
+                  - "ecs:DeregisterTaskDefinition"
+                  - "ecs:TagResource"
+                  - "ecs:UntagResource"
                 Resource: "*"
       Tags:
         - Key: Environment
