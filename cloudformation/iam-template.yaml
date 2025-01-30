@@ -25,6 +25,8 @@ Resources:
         - "arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess"
         - "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
         - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+        - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" 
+        - "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
       Policies:
         - PolicyName: AllowCustomPolicies
           PolicyDocument:
@@ -64,6 +66,21 @@ Resources:
                 Action:
                   - "codebuild:StartBuild"
                   - "codebuild:BatchGetBuilds"
+                Resource: "*"
+        - PolicyName: AllowECSExecutionRole
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "ecs:RunTask"
+                  - "ecs:UpdateService"
+                  - "ecs:DescribeServices"
+                  - "ecs:DescribeTaskDefinition"
+                  - "ecs:ListTasks"
+                  - "ecs:StopTask"
+                  - "ecs:DescribeTasks"
+                  - "ecs:ListTaskDefinitions"
                 Resource: "*"
       Tags:
         - Key: Environment
