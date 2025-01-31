@@ -37,6 +37,7 @@ Resources:
                 Action:
                   - "secretsmanager:GetSecretValue"
                   - "secretsmanager:DescribeSecret"
+                  - "secretsmanager:ListSecrets"
                 Resource:
                   - !Ref SecretArn
               - Effect: Allow
