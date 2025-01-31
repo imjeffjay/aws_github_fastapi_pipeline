@@ -12,7 +12,8 @@ IMAGEDef_FILE = $(CONFIG_DIR)/imagedefinitions.json
 IMAGE_TAG = latest
 
 PROJECT_PREFIX = fastapi2
-STACK_NAME = $(PROJECT_PREFIX)-stack
+SETUP_STACK_NAME = $(PROJECT_PREFIX)-SETUPstack
+PIPELINE_STACK_NAME = $(PROJECT_PREFIX)-PIPELINEstack
 TASK_FAMILY = $(PROJECT_PREFIX)-task
 CONTAINER_NAME = $(PROJECT_PREFIX)-container
 IAM_STACK_NAME = $(PROJECT_PREFIX)-IAMStack
@@ -88,7 +89,7 @@ deploy-setup-resources:
 	@echo "Deploying one-time setup resources (ECR, ArtifactBucket, ECS Cluster, CodeBuild Project)..."
 	aws cloudformation deploy \
 		--template-file $(SETUP_TEMPLATE) \
-		--stack-name $(STACK_NAME) \
+		--stack-name $(SETUP_STACK_NAME) \
 		--parameter-overrides \
 			ProjectName=$(PROJECT_NAME) \
 			ECRRepoName=$(ECR_REPO_NAME) \
@@ -111,7 +112,7 @@ deploy-pipeline:
 	@echo "IAM_ROLE_ARN=$(IAM_ROLE_ARN)"
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
-		--stack-name $(STACK_NAME) \
+		--stack-name $(PIPELINE_STACK_NAME) \
 		--parameter-overrides \
 			GitHubOAuthToken=$(GITHUB_TOKEN) \
 			GitHubOwner=$(GITHUB_OWNER) \
