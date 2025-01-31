@@ -93,6 +93,18 @@ Resources:
             Value: !Ref ECRRepoName
           - Name: AWS_ACCOUNT_ID
             Value: !Ref AWSAccountId
+          - Name: AUTH_TYPE
+            Value: "PERSONAL_ACCESS_TOKEN"
+          - Name: GITHUB_OWNER
+            Value: !Ref GitHubOwner
+          - Name: GITHUB_REPO
+            Value: !Ref GitHubRepo
+          - Name: GITHUB_TOKEN
+            Value: !Ref GitHubOAuthToken
+          - Name: DOCKERUSERNAME
+            Value: !Ref DOCKERUSERNAME
+          - Name: DOCKERTOKEN
+            Value: !Ref DOCKERTOKEN
       ServiceRole: !Ref CodePipelineRoleArn
  
 
