@@ -39,9 +39,9 @@ AWS_ACCOUNT_ID = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSE
 AWS_REGION = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AWS_REGION')
 
 ### From Setup-Resoucres
-ARTIFACT_BUCKET=$(shell aws cloudformation describe-stacks --stack-name $(SETUP_STACK_NAME) --query "Stacks[0].Outputs[?ExportName=='$(PROJECT_PREFIX)-ArtifactBucketName'].OutputValue | [0]" --output text 2>/dev/null)
-ECR_REPO=$(shell aws cloudformation describe-stacks --stack-name $(SETUP_STACK_NAME) --query "Stacks[0].Outputs[?ExportName=='$(PROJECT_PREFIX)-ECRRepositoryName'].OutputValue | [0]" --output text 2>/dev/null)
-CLUSTER=$(shell aws cloudformation describe-stacks --stack-name $(SETUP_STACK_NAME) --query "Stacks[0].Outputs[?ExportName=='$(PROJECT_PREFIX)-ECSClusterName'].OutputValue | [0]" --output text 2>/dev/null)
+ARTIFACT_BUCKET=$(shell aws cloudformation describe-stacks --stack-name fastapi2-SETUPstack --query "Stacks[0].Outputs[?OutputKey=='ArtifactBucketName'].OutputValue" --output text 2>/dev/null)
+ECR_REPO=$(shell aws cloudformation describe-stacks --stack-name fastapi2-SETUPstack --query "Stacks[0].Outputs[?OutputKey=='ECRRepositoryName'].OutputValue" --output text 2>/dev/null)
+CLUSTER=$(shell aws cloudformation describe-stacks --stack-name fastapi2-SETUPstack --query "Stacks[0].Outputs[?OutputKey=='ECSClusterName'].OutputValue" --output text 2>/dev/null)
 
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
