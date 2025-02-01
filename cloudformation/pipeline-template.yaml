@@ -81,7 +81,6 @@ Resources:
           PortMappings:
             - ContainerPort: 8000
 
-  # ECS Service
   ECSService:
     Type: "AWS::ECS::Service"
     Properties:
@@ -94,7 +93,6 @@ Resources:
           Subnets: !Ref SubnetIds
           AssignPublicIp: "ENABLED"
 
-  # CodeBuild Project
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -103,7 +101,7 @@ Resources:
         Type: GITHUB
         Location: !Sub "https://github.com/${GitHubOwner}/${GitHubRepo}.git"
         Auth:
-          Type: OAUTH
+          Type: PERSONAL_ACCESS_TOKEN
           Resource: !Ref GitHubOAuthToken
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
@@ -135,7 +133,6 @@ Resources:
       Artifacts:
         Type: NO_ARTIFACTS
 
-  # CodePipeline
   CodePipeline:
     Type: "AWS::CodePipeline::Pipeline"
     Properties:

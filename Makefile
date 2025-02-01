@@ -38,6 +38,11 @@ DOCKERUSERNAME = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSE
 AWS_ACCOUNT_ID = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AWS_ACCOUNT_ID')
 AWS_REGION = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AWS_REGION')
 
+### From Setup-Resoucres
+ARTIFACT_BUCKET=$(shell aws cloudformation describe-stacks --stack-name fastapi2-setup --query "Stacks[0].Outputs[?ExportName=='fastapi2-project-ArtifactBucketName'].OutputValue" --output text)
+ECR_REPO=$(shell aws cloudformation describe-stacks --stack-name fastapi2-setup --query "Stacks[0].Outputs[?ExportName=='fastapi2-project-ECRRepositoryName'].OutputValue" --output text)
+CLUSTER=$(shell aws cloudformation describe-stacks --stack-name fastapi2-setup --query "Stacks[0].Outputs[?ExportName=='fastapi2-project-ECSClusterName'].OutputValue" --output text)
+
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
 	--logical-resource-id CodePipelineRole \
@@ -122,7 +127,7 @@ deploy-pipeline:
 			AuthType=$(AUTH_TYPE) \
 			Server=$(SERVER) \
 			RepositoryName=$(ECR_REPO_NAME) \
-			ClusterName=$(CLUSTER_NAME) \
+			ClusterName=$(CLUSTER) \
 			TaskFamily=$(TASK_FAMILY) \
 			ContainerName=$(CONTAINER_NAME) \
 			SubnetIds=$(SUBNET_IDS) \
@@ -130,6 +135,8 @@ deploy-pipeline:
 			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
 			DOCKERUSERNAME=$(DOCKERUSERNAME) \
 			DOCKERTOKEN=$(DOCKERTOKEN) \
+			ArtifactBucketName=$(ARTIFACT_BUCKET) \
+			ECRRepoName=$(ECR_REPO)			
 		--capabilities CAPABILITY_NAMED_IAM
 
 
