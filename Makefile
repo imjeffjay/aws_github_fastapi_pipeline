@@ -42,6 +42,7 @@ AWS_REGION = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRET
 ECR_REPO=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ECRRepository'].PhysicalResourceId" --output text)
 CLUSTER=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ECSCluster'].PhysicalResourceId" --output text)
 ARTIFACT_BUCKET=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ArtifactBucket'].PhysicalResourceId" --output text)
+CODEBUILD_PROJECT=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='CodeBuildProject'].PhysicalResourceId" --output text)
 
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
@@ -138,7 +139,7 @@ deploy-pipeline:
 			TaskFamily=$(TASK_FAMILY) \
 			ContainerName=$(CONTAINER_NAME) \
 			SubnetIds=$(SUBNET_IDS) \
-			ProjectName=$(PROJECT_NAME) \
+			ProjectName=$(CODEBUILD_PROJECT) \
 			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
 			DOCKERUSERNAME=$(DOCKERUSERNAME) \
 			DOCKERTOKEN=$(DOCKERTOKEN) \
