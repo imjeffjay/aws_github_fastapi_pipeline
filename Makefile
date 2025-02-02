@@ -39,9 +39,9 @@ AWS_ACCOUNT_ID = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSE
 AWS_REGION = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AWS_REGION')
 
 ### From Setup-Resoucres
-ARTIFACT_BUCKET=$(shell aws cloudformation describe-stacks --stack-name fastapi2-SETUPstack --query "Stacks[0].Outputs[?OutputKey=='ArtifactBucketName'].OutputValue" --output text 2>/dev/null)
-ECR_REPO=$(shell aws cloudformation describe-stacks --stack-name fastapi2-SETUPstack --query "Stacks[0].Outputs[?OutputKey=='ECRRepositoryName'].OutputValue" --output text 2>/dev/null)
-CLUSTER=$(shell aws cloudformation describe-stacks --stack-name fastapi2-SETUPstack --query "Stacks[0].Outputs[?OutputKey=='ECSClusterName'].OutputValue" --output text 2>/dev/null)
+ECR_REPO=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ECRRepository'].PhysicalResourceId" --output text)
+CLUSTER=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ECSCluster'].PhysicalResourceId" --output text)
+ARTIFACT_BUCKET=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ArtifactBucket'].PhysicalResourceId" --output text)
 
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
@@ -118,6 +118,11 @@ deploy-pipeline:
 	@echo "ECR_REPO=$(ECR_REPO)"
 	@echo "CLUSTER=$(CLUSTER)"
 	@echo "ARTIFACT_BUCKET=$(ARTIFACT_BUCKET)"
+
+	@if [ -z "$(ECR_REPO)" ] || [ -z "$(CLUSTER)" ] || [ -z "$(ARTIFACT_BUCKET)" ]; then \
+        echo "ERROR: One or more required resources are missing. Check if the setup stack exists and is correctly configured."; \
+        exit 1; \
+    fi
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
 		--stack-name $(PIPELINE_STACK_NAME) \
@@ -129,7 +134,6 @@ deploy-pipeline:
 			AWSAccountId=$(AWS_ACCOUNT_ID) \
 			AuthType=$(AUTH_TYPE) \
 			Server=$(SERVER) \
-			RepositoryName=$(GITHUB_REPO) \
 			ClusterName=$(CLUSTER) \
 			TaskFamily=$(TASK_FAMILY) \
 			ContainerName=$(CONTAINER_NAME) \
