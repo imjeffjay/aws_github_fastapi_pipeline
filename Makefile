@@ -41,8 +41,8 @@ AWS_ACCOUNT_ID = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSE
 AWS_REGION = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AWS_REGION')
 
 ### From Setup-Resoucres
-ARTIFACT_BUCKET_NAME=$(shell aws cloudformation list-exports --query "Exports[?Name=='ArtifactBucket-Name'].Value" --output text)
-ARTIFACT_BUCKET_ARN=$(shell aws cloudformation list-exports --query "Exports[?Name=='ArtifactBucket-Arn'].Value" --output text)
+ARTIFACT_BUCKET_NAME=$(shell aws s3api list-buckets --query "Buckets[?contains(Name, \`${AWS_ACCOUNT_ID}-\`)].Name" --output text | grep $(AWS_REGION) || echo "")
+ARTIFACT_BUCKET_ARN=$(shell echo "arn:aws:s3:::$(ARTIFACT_BUCKET_NAME)")
 ECR_REPO=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ECRRepository'].PhysicalResourceId" --output text)
 CLUSTER=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ECSCluster'].PhysicalResourceId" --output text)
 CODEBUILD_PROJECT=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?ResourceType=='AWS::CodeBuild::Project'].PhysicalResourceId" --output text)
