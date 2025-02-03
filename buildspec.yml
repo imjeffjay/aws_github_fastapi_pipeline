@@ -30,8 +30,17 @@ phases:
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
       - echo "Docker image pushed successfully!"
       - echo "Generating imagedefinitions.json..."
-      - echo '[{"name":"fastapi-container","imageUri":"'$AWS_ACCOUNT_ID'.dkr.ecr.'$AWS_REGION'.amazonaws.com/'$ECR_REPO_NAME':latest"}]' > imagedefinitions.json
-      - cat imagedefinitions.json      
+      - echo '[{"name":"fastapi-container","imageUri":"'$AWS_ACCOUNT_ID'.dkr.ecr.'$AWS_REGION'.amazonaws.com/'$ECR_REPO_NAME':latest"}]' > ../imagedefinitions.json
+      - echo "Checking imagedefinitions.json existence..."
+      - cat imagedefinitions.json    
+      - echo "Checking imagedefinitions.json existence..."
+      - echo "Listing files..."
+      - ls -lah ../
+
+artifacts:
+  files:
+    - imagedefinitions.json
+
 
 env:
   variables:
@@ -40,6 +49,4 @@ env:
     AUTH_TYPE: "PERSONAL_ACCESS_TOKEN"
     SERVER: "GitHub"
 
-artifacts:
-  files:
-    - imagedefinitions.json
+
