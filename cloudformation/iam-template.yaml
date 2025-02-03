@@ -111,7 +111,8 @@ Resources:
                   - "s3:ListBucket"
                   - "s3:GetBucketLocation"
                 Resource:
-                  - !Ref ArtifactBucketArn
+                  - !Sub "arn:aws:s3:::${ArtifactBucketName}"
+                  - !Sub "arn:aws:s3:::${ArtifactBucketName}/*"
 
       Tags:
         - Key: Environment
