@@ -42,7 +42,7 @@ AWS_REGION = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRET
 ECR_REPO=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ECRRepository'].PhysicalResourceId" --output text)
 CLUSTER=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ECSCluster'].PhysicalResourceId" --output text)
 ARTIFACT_BUCKET=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ArtifactBucket'].PhysicalResourceId" --output text)
-CODEBUILD_PROJECT=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='CodeBuildProject'].PhysicalResourceId" --output text)
+CODEBUILD_PROJECT=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?ResourceType=='AWS::CodeBuild::Project'].PhysicalResourceId" --output text)
 
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
@@ -119,9 +119,8 @@ deploy-pipeline:
 	@echo "ECR_REPO=$(ECR_REPO)"
 	@echo "CLUSTER=$(CLUSTER)"
 	@echo "ARTIFACT_BUCKET=$(ARTIFACT_BUCKET)"
-
-	@if [ -z "$(ECR_REPO)" ] || [ -z "$(CLUSTER)" ] || [ -z "$(ARTIFACT_BUCKET)" ]; then \
-        echo "ERROR: One or more required resources are missing. Check if the setup stack exists and is correctly configured."; \
+	@if [ -z "$(CODEBUILD_PROJECT)" ]; then \
+        echo "ERROR: Could not retrieve CodeBuild project from setup stack."; \
         exit 1; \
     fi
 	aws cloudformation deploy \

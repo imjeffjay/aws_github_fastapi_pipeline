@@ -93,45 +93,6 @@ Resources:
           Subnets: !Ref SubnetIds
           AssignPublicIp: "ENABLED"
 
-  CodeBuildProject:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: !Ref ProjectName
-      Source:
-        Type: GITHUB
-        Location: !Sub "https://github.com/${GitHubOwner}/${GitHubRepo}.git"
-        Auth:
-          Type: PERSONAL_ACCESS_TOKEN
-          Resource: !Ref GitHubOAuthToken
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/standard:5.0
-        PrivilegedMode: true
-        Type: LINUX_CONTAINER
-        EnvironmentVariables:
-          - Name: AWS_REGION
-            Value: !Ref AWSRegion
-          - Name: AWS_ACCOUNT_ID
-            Value: !Ref AWSAccountId
-          - Name: ECR_REPO_NAME
-            Value: !Ref ECRRepoName
-          - Name: GITHUB_TOKEN
-            Value: !Ref GitHubOAuthToken
-          - Name: GITHUB_OWNER
-            Value: !Ref GitHubOwner
-          - Name: GITHUB_REPO
-            Value: !Ref GitHubRepo
-          - Name: AUTH_TYPE
-            Value: !Ref AuthType
-          - Name: DOCKERTOKEN
-            Value: !Ref DOCKERTOKEN
-          - Name: DOCKERUSERNAME
-            Value: !Ref DOCKERUSERNAME
-          - Name: SERVER
-            Value: !Ref Server
-      ServiceRole: !Ref CodePipelineRoleArn
-      Artifacts:
-        Type: NO_ARTIFACTS
 
   CodePipeline:
     Type: "AWS::CodePipeline::Pipeline"
