@@ -97,8 +97,9 @@ Resources:
                   - "s3:GetObject"
                   - "s3:ListBucket"
                 Resource:
-                  - !Sub "arn:aws:s3:::${ArtifactBucketName}"  
-                  - !Sub "arn:aws:s3:::${ArtifactBucketName}/*"
+                  - "arn:aws:s3:::*"
+                  - "arn:aws:s3:::*-codepipeline-artifacts-*"
+
       Tags:
         - Key: Environment
           Value: Production
