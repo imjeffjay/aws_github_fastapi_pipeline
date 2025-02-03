@@ -2,6 +2,18 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: "IAM roles for CodePipeline and CodeBuild."
 
 Parameters:
+  ArtifactBucketName:
+    Type: String
+    Description: "S3 bucket used for storing pipeline artifacts"
+  ArtifactBucketArn:
+    Type: String
+    Description: "S3 bucket ARN for granting necessary permissions"
+  AWSAccountId:
+    Type: String
+    Description: "AWS Account ID"
+  AWSRegion:
+    Type: String
+    Description: "AWS Region"
   SecretArn:
     Type: String
     Description: "ARN of the first secret for CodeBuild to access"
@@ -95,14 +107,11 @@ Resources:
               - Effect: Allow
                 Action:
                   - "s3:GetObject"
-                  - "s3:PutObject"                  
+                  - "s3:PutObject"
                   - "s3:ListBucket"
-                  - "s3:GetBucketLocation"                  
-                Resource: "arn:aws:s3:::*"
-                Condition:
-                  StringLike:
-                    "s3:prefix": "*codepipeline-artifacts-*"
-
+                  - "s3:GetBucketLocation"
+                Resource:
+                  - !Ref ArtifactBucketArn
 
       Tags:
         - Key: Environment

@@ -37,10 +37,6 @@ Parameters:
     Type: String
     Default: "FastAPICluster"
     Description: "ECS Cluster Name"
-  ArtifactBucketName:
-    Type: String
-    Default: "TBD"
-    Description: "The name of the S3 bucket for CodePipeline artifacts. Leave empty to create a new bucket."
   ProjectName:
     Type: String
     Default: "FastAPIBuildProject"
@@ -53,17 +49,6 @@ Resources:
     Type: "AWS::ECR::Repository"
     Properties:
       RepositoryName: !Ref ECRRepoName
-
-  # Artifact Bucket
-  ArtifactBucket:
-    Type: "AWS::S3::Bucket"
-    Properties:
-      BucketName: !Ref ArtifactBucketName
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
 
   # ECS Cluster
   ECSCluster:
@@ -112,9 +97,6 @@ Outputs:
   ECRRepositoryUri:
     Description: "URI of the ECR Repository"
     Value: !Sub "${AWSAccountId}.dkr.ecr.${AWSRegion}.amazonaws.com/${ECRRepoName}"
-  ArtifactBucketName:
-    Description: "The name of the artifact bucket"
-    Value: !Ref ArtifactBucketName
   ECSClusterName:
     Description: "Name of the ECS Cluster"
     Value: !Ref ECSCluster

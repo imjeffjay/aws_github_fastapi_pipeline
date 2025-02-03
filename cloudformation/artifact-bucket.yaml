@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "CloudFormation template to create an S3 bucket for storing CodePipeline artifacts."
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: "S3 bucket used for storing pipeline artifacts."
+
+Resources:
+  ArtifactBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref BucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+
+Outputs:
+  BucketName:
+    Description: "The name of the artifact bucket"
+    Value: !Ref ArtifactBucket
+    Export:
+      Name: !Sub "${BucketName}-Name"
+  BucketArn:
+    Description: "The ARN of the artifact bucket"
+    Value: !GetAtt ArtifactBucket.Arn
+    Export:
+      Name: !Sub "${BucketName}-Arn"

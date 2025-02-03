@@ -3,6 +3,7 @@
 # ====================
 TEMPLATE_DIR = cloudformation
 
+BUCKET_TEMPLATE = $(TEMPLATE_DIR)/artifact-bucket.yaml
 IAM_TEMPLATE = $(TEMPLATE_DIR)/iam-template.yaml
 SETUP_TEMPLATE = $(TEMPLATE_DIR)/setup-resources.yaml
 PIPELINE_TEMPLATE = $(TEMPLATE_DIR)/pipeline-template.yaml
@@ -12,6 +13,7 @@ IMAGEDef_FILE = $(CONFIG_DIR)/imagedefinitions.json
 IMAGE_TAG = latest
 
 PROJECT_PREFIX = fastapi2
+BUCKET_STACK_NAME = $(AWS_REGION)-BUCKETstack
 SETUP_STACK_NAME = $(PROJECT_PREFIX)-SETUPstack
 PIPELINE_STACK_NAME = $(PROJECT_PREFIX)-PIPELINEstack
 TASK_FAMILY = $(PROJECT_PREFIX)-task
@@ -20,7 +22,7 @@ IAM_STACK_NAME = $(PROJECT_PREFIX)-IAMStack
 PROJECT_NAME = $(PROJECT_PREFIX)-project
 ECR_REPO_NAME = $(PROJECT_PREFIX)-app
 CLUSTER_NAME = $(PROJECT_PREFIX)-cluster
-ARTIFACT_BUCKET_NAME = $(AWS_ACCOUNT_ID)-codepipeline-artifacts-$(AWS_REGION)
+BUCKET_NAME = $(AWS_ACCOUNT_ID)-codepipeline-artifacts-$(AWS_REGION)
 
 # ====================
 # Dynamic Variables
@@ -39,9 +41,10 @@ AWS_ACCOUNT_ID = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSE
 AWS_REGION = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AWS_REGION')
 
 ### From Setup-Resoucres
+ARTIFACT_BUCKET_NAME=$(shell aws cloudformation list-exports --query "Exports[?Name=='ArtifactBucket-Name'].Value" --output text)
+ARTIFACT_BUCKET_ARN=$(shell aws cloudformation list-exports --query "Exports[?Name=='ArtifactBucket-Arn'].Value" --output text)
 ECR_REPO=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ECRRepository'].PhysicalResourceId" --output text)
 CLUSTER=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ECSCluster'].PhysicalResourceId" --output text)
-ARTIFACT_BUCKET=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ArtifactBucket'].PhysicalResourceId" --output text)
 CODEBUILD_PROJECT=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?ResourceType=='AWS::CodeBuild::Project'].PhysicalResourceId" --output text)
 
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
@@ -77,6 +80,16 @@ SUBNET_IDS = $(shell aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(VP
 # Workflow
 # ====================
 
+### Create bucket for region if not created already
+deploy-artifact-bucket:
+	@echo "Deploying artifact bucket..."
+	aws cloudformation deploy \
+		--template-file $(BUCKET_TEMPLATE) \
+		--stack-name $(BUCKET_STACK_NAME) \
+		--parameter-overrides \
+			BucketName=$(BUCKET_NAME)
+
+
 ### Step 1 - Run once per project  ###
 # Build IAM Role
 build-iam-role:
@@ -86,7 +99,11 @@ build-iam-role:
 		--stack-name $(IAM_STACK_NAME) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--parameter-overrides \
-			SecretArn=$(SECRET_ARN)
+			SecretArn=$(SECRET_ARN) \
+			AWSAccountId=$(AWS_ACCOUNT_ID) \
+			AWSRegion=$(AWS_REGION) \
+			ArtifactBucketName=$(ARTIFACT_BUCKET_NAME) \
+			ArtifactBucketArn=$(ARTIFACT_BUCKET_ARN)
 	@echo "IAM roles deployed successfully!"
 
 ### Step 2 - Run once per project  ###
@@ -100,7 +117,6 @@ deploy-setup-resources:
 			ProjectName=$(PROJECT_NAME) \
 			ECRRepoName=$(ECR_REPO_NAME) \
 			ClusterName=$(CLUSTER_NAME) \
-			ArtifactBucketName=$(ARTIFACT_BUCKET_NAME) \
 			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
 			GitHubRepo=$(GITHUB_REPO) \
 			GitHubOwner=$(GITHUB_OWNER) \
@@ -119,10 +135,7 @@ deploy-pipeline:
 	@echo "ECR_REPO=$(ECR_REPO)"
 	@echo "CLUSTER=$(CLUSTER)"
 	@echo "ARTIFACT_BUCKET=$(ARTIFACT_BUCKET)"
-	@if [ -z "$(CODEBUILD_PROJECT)" ]; then \
-        echo "ERROR: Could not retrieve CodeBuild project from setup stack."; \
-        exit 1; \
-    fi
+
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
 		--stack-name $(PIPELINE_STACK_NAME) \
@@ -142,7 +155,7 @@ deploy-pipeline:
 			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
 			DOCKERUSERNAME=$(DOCKERUSERNAME) \
 			DOCKERTOKEN=$(DOCKERTOKEN) \
-			ArtifactBucketName=$(ARTIFACT_BUCKET) \
+			ArtifactBucketName=$(ARTIFACT_BUCKET_NAME) \
 			ECRRepoName=$(ECR_REPO)
 		--capabilities CAPABILITY_NAMED_IAM
 
