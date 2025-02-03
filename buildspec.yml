@@ -24,22 +24,26 @@ phases:
       - docker build -t $ECR_REPO_NAME .
       - docker tag $ECR_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
 
-  post_build:
-    commands:
-      - echo "Pushing Docker image to ECR..."
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
-      - echo "Docker image pushed successfully!"
-      - echo "Generating imagedefinitions.json..."
-      - echo '[{"name":"fastapi-container","imageUri":"'$AWS_ACCOUNT_ID'.dkr.ecr.'$AWS_REGION'.amazonaws.com/'$ECR_REPO_NAME':latest"}]' > ../imagedefinitions.json
-      - echo "Checking imagedefinitions.json existence..."
-      - cat imagedefinitions.json    
-      - echo "Checking imagedefinitions.json existence..."
-      - echo "Listing files..."
-      - ls -lah ../
+post_build:
+  commands:
+    - echo "Pushing Docker image to ECR..."
+    - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
+    - echo "Docker image pushed successfully!"
+
+    # Ensure the file is created in the right location
+    - echo "Generating imagedefinitions.json..."
+    - echo '[{"name":"fastapi-container","imageUri":"'$AWS_ACCOUNT_ID'.dkr.ecr.'$AWS_REGION'.amazonaws.com/'$ECR_REPO_NAME':latest"}]' > imagedefinitions.json
+
+    # Debugging steps
+    - echo "Checking imagedefinitions.json existence..."
+    - ls -lah  # List files in the current directory
+    - cat imagedefinitions.json  # Confirm file contents
 
 artifacts:
   files:
     - imagedefinitions.json
+  discard-paths: yes  # Ensure it's in the root for CodePipeline
+
 
 
 env:
