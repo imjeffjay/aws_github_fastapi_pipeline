@@ -47,3 +47,8 @@ aws cloudformation describe-stack-events --stack-name fastapi2-stack
 
 aws ecs describe-services --cluster fastapi2-cluster --services fastapi2-stack-ECSService-JFYmbmzr9yhC 
 
+
+
+aws codepipeline get-pipeline --name fastapi2-PIPELINEstack-CodePipeline-3w6R6Wd2XiXt --query 'pipeline.roleArn' --output text
+aws iam list-attached-role-policies --role-name fastapi2-IAMStack-CodePipelineRole-a7Ervmoi7TAb
+aws iam list-role-policies --role-name fastapi2-IAMStack-CodePipelineRole-a7Ervmoi7TAb

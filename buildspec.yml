@@ -40,3 +40,6 @@ env:
     AUTH_TYPE: "PERSONAL_ACCESS_TOKEN"
     SERVER: "GitHub"
 
+artifacts:
+  files:
+    - imagedefinitions.json

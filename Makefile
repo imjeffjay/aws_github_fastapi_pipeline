@@ -109,7 +109,7 @@ build-iam-role:
 ### Step 2 - Run once per project  ###
 # Deploy One-Time Setup Resources
 deploy-setup-resources:
-	@echo "Deploying one-time setup resources (ECR, ArtifactBucket, ECS Cluster, CodeBuild Project)..."
+	@echo "Deploying one-time setup resources (ECR, ECS Cluster, CodeBuild Project)..."
 	aws cloudformation deploy \
 		--template-file $(SETUP_TEMPLATE) \
 		--stack-name $(SETUP_STACK_NAME) \
