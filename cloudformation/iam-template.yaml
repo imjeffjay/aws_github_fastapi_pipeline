@@ -95,10 +95,14 @@ Resources:
               - Effect: Allow
                 Action:
                   - "s3:GetObject"
+                  - "s3:PutObject"                  
                   - "s3:ListBucket"
-                Resource:
-                  - "arn:aws:s3:::*"
-                  - "arn:aws:s3:::*-codepipeline-artifacts-*"
+                  - "s3:GetBucketLocation"                  
+                Resource: "arn:aws:s3:::*"
+                Condition:
+                  StringLike:
+                    "s3:prefix": "*codepipeline-artifacts-*"
+
 
       Tags:
         - Key: Environment
