@@ -1,6 +1,0 @@
-[
-  {
-    "name": "fastapi-container",
-    "imageUri": "<account-id>.dkr.ecr.us-east-1.amazonaws.com/fastapi-app:latest"
-  }
-]

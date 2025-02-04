@@ -8,8 +8,6 @@ IAM_TEMPLATE = $(TEMPLATE_DIR)/iam-template.yaml
 SETUP_TEMPLATE = $(TEMPLATE_DIR)/setup-resources.yaml
 PIPELINE_TEMPLATE = $(TEMPLATE_DIR)/pipeline-template.yaml
 
-CONFIG_DIR = configs
-IMAGEDef_FILE = $(CONFIG_DIR)/imagedefinitions.json
 IMAGE_TAG = latest
 
 PROJECT_PREFIX = fastapi2
