@@ -45,7 +45,6 @@ artifacts:
   files:
     - $CODEBUILD_SRC_DIR/imagedefinitions.json
 
-
 env:
   variables:
     AWS_REGION: "us-east-1"
