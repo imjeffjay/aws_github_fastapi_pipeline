@@ -127,7 +127,7 @@ deploy-setup-resources: deploy-artifact-bucket build-iam-role
 build-push-image: deploy-setup-resources
 	@echo "Triggering CodeBuild to build and push Docker image..."
 	@BUILD_ID=$$(aws codebuild start-build \
-		--project-name $(PROJECT_NAME) \
+		--project-name $(CODEBUILD_PROJECT) \
 		--environment-variables-override \
 			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
 			"name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT" \
