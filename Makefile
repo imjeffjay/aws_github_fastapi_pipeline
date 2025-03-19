@@ -212,15 +212,27 @@ check-aws-credentials:
 # ====================
 
 cleanup:
-	@echo "Cleaning up AWS resources..."
-	aws cloudformation delete-stack --stack-name $(PIPELINE_STACK_NAME)
-	aws cloudformation wait stack-delete-complete --stack-name $(PIPELINE_STACK_NAME)
-	aws cloudformation delete-stack --stack-name $(SETUP_STACK_NAME)
-	aws cloudformation wait stack-delete-complete --stack-name $(SETUP_STACK_NAME)
-	aws cloudformation delete-stack --stack-name $(IAM_STACK_NAME)
-	aws cloudformation wait stack-delete-complete --stack-name $(IAM_STACK_NAME)
-	aws cloudformation delete-stack --stack-name $(BUCKET_STACK_NAME)
-	aws cloudformation wait stack-delete-complete --stack-name $(BUCKET_STACK_NAME)
+	@echo "Checking for existing stacks..."
+	@if aws cloudformation describe-stacks --stack-name $(PIPELINE_STACK_NAME) 2>/dev/null; then \
+		echo "Deleting pipeline stack $(PIPELINE_STACK_NAME)..."; \
+		aws cloudformation delete-stack --stack-name $(PIPELINE_STACK_NAME); \
+		aws cloudformation wait stack-delete-complete --stack-name $(PIPELINE_STACK_NAME); \
+	fi
+	@if aws cloudformation describe-stacks --stack-name $(SETUP_STACK_NAME) 2>/dev/null; then \
+		echo "Deleting setup resources stack $(SETUP_STACK_NAME)..."; \
+		aws cloudformation delete-stack --stack-name $(SETUP_STACK_NAME); \
+		aws cloudformation wait stack-delete-complete --stack-name $(SETUP_STACK_NAME); \
+	fi
+	@if aws cloudformation describe-stacks --stack-name $(IAM_STACK_NAME) 2>/dev/null; then \
+		echo "Deleting IAM stack $(IAM_STACK_NAME)..."; \
+		aws cloudformation delete-stack --stack-name $(IAM_STACK_NAME); \
+		aws cloudformation wait stack-delete-complete --stack-name $(IAM_STACK_NAME); \
+	fi
+	@if aws cloudformation describe-stacks --stack-name $(BUCKET_STACK_NAME) 2>/dev/null; then \
+		echo "Deleting artifact bucket stack $(BUCKET_STACK_NAME)..."; \
+		aws cloudformation delete-stack --stack-name $(BUCKET_STACK_NAME); \
+		aws cloudformation wait stack-delete-complete --stack-name $(BUCKET_STACK_NAME); \
+	fi
 	@echo "Cleanup completed"
 
 
