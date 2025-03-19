@@ -219,6 +219,8 @@ cleanup:
 		aws cloudformation wait stack-delete-complete --stack-name $(PIPELINE_STACK_NAME); \
 	fi
 	@if aws cloudformation describe-stacks --stack-name $(SETUP_STACK_NAME) 2>/dev/null; then \
+		echo "Deleting ECR repository first..."; \
+		aws ecr delete-repository --repository-name $(ECR_REPO_NAME) --force; \
 		echo "Deleting setup resources stack $(SETUP_STACK_NAME)..."; \
 		aws cloudformation delete-stack --stack-name $(SETUP_STACK_NAME); \
 		aws cloudformation wait stack-delete-complete --stack-name $(SETUP_STACK_NAME); \
