@@ -106,7 +106,7 @@ build-iam-role:
 
 ### Step 2 - Run once per project  ###
 # Deploy One-Time Setup Resources
-deploy-setup-resources:
+deploy-setup-resources: deploy-artifact-bucket build-iam-role
 	@echo "Deploying one-time setup resources (ECR, ECS Cluster, CodeBuild Project)..."
 	aws cloudformation deploy \
 		--template-file $(SETUP_TEMPLATE) \
@@ -127,7 +127,7 @@ deploy-setup-resources:
 		--capabilities CAPABILITY_NAMED_IAM
 
 ### Step 3 - Run once per project  ###
-deploy-pipeline:
+deploy-pipeline: deploy-setup-resources
 	@echo "Deploying CloudFormation stack..."
 	@echo "IAM_ROLE_ARN=$(IAM_ROLE_ARN)"
 	@echo "ECR_REPO=$(ECR_REPO)"
@@ -238,6 +238,29 @@ deploy-cloudformation:
 # ====================
 # Combined Workflow
 # ====================
+
+setup-all: check-aws-credentials deploy-artifact-bucket build-iam-role deploy-setup-resources deploy-pipeline
+
+check-aws-credentials:
+	@echo "Checking AWS credentials..."
+	@aws sts get-caller-identity || (echo "AWS credentials not configured properly" && exit 1)
+	@echo "AWS credentials verified"
+
+# ====================
+# Cleanup
+# ====================
+
+cleanup:
+	@echo "Cleaning up AWS resources..."
+	aws cloudformation delete-stack --stack-name $(PIPELINE_STACK_NAME)
+	aws cloudformation wait stack-delete-complete --stack-name $(PIPELINE_STACK_NAME)
+	aws cloudformation delete-stack --stack-name $(SETUP_STACK_NAME)
+	aws cloudformation wait stack-delete-complete --stack-name $(SETUP_STACK_NAME)
+	aws cloudformation delete-stack --stack-name $(IAM_STACK_NAME)
+	aws cloudformation wait stack-delete-complete --stack-name $(IAM_STACK_NAME)
+	aws cloudformation delete-stack --stack-name $(BUCKET_STACK_NAME)
+	aws cloudformation wait stack-delete-complete --stack-name $(BUCKET_STACK_NAME)
+	@echo "Cleanup completed"
 
 
 
