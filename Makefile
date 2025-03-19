@@ -78,7 +78,7 @@ SUBNET_IDS = $(shell aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(VP
 # Workflow
 # ====================
 
-### Create bucket for region if not created already
+### Step 1: Create artifact bucket for storing pipeline artifacts
 deploy-artifact-bucket:
 	@echo "Deploying artifact bucket..."
 	aws cloudformation deploy \
@@ -87,9 +87,7 @@ deploy-artifact-bucket:
 		--parameter-overrides \
 			BucketName=$(BUCKET_NAME)
 
-
-### Step 1 - Run once per project  ###
-# Build IAM Role
+### Step 2: Create IAM roles and permissions
 build-iam-role:
 	@echo "Deploying IAM roles..."
 	aws cloudformation deploy \
@@ -104,8 +102,7 @@ build-iam-role:
 			ArtifactBucketArn=$(ARTIFACT_BUCKET_ARN)
 	@echo "IAM roles deployed successfully!"
 
-### Step 2 - Run once per project  ###
-# Deploy One-Time Setup Resources
+### Step 3: Create basic infrastructure (ECR, ECS Cluster, CodeBuild)
 deploy-setup-resources: deploy-artifact-bucket build-iam-role
 	@echo "Deploying one-time setup resources (ECR, ECS Cluster, CodeBuild Project)..."
 	aws cloudformation deploy \
@@ -126,8 +123,33 @@ deploy-setup-resources: deploy-artifact-bucket build-iam-role
 			SecretArn=$(SECRET_ARN) \
 		--capabilities CAPABILITY_NAMED_IAM
 
-### Step 3 - Run once per project  ###
-deploy-pipeline: deploy-setup-resources
+### Step 4: Build and push initial Docker image
+build-push-image: deploy-setup-resources
+	@echo "Triggering CodeBuild to build and push Docker image..."
+	BUILD_ID=$$(aws codebuild start-build \
+		--project-name $(PROJECT_NAME) \
+		--environment-variables-override \
+			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
+			"name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT" \
+			"name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT" \
+			"name=GITHUB_TOKEN,value=$(GITHUB_TOKEN),type=PLAINTEXT" \
+			"name=GITHUB_OWNER,value=$(GITHUB_OWNER),type=PLAINTEXT" \
+			"name=GITHUB_REPO,value=$(GITHUB_REPO),type=PLAINTEXT" \
+			"name=AUTH_TYPE,value=$(AUTH_TYPE),type=PLAINTEXT" \
+			"name=DOCKERTOKEN,value=$(DOCKERTOKEN),type=PLAINTEXT" \
+			"name=DOCKERUSERNAME,value=$(DOCKERUSERNAME),type=PLAINTEXT" \
+			"name=SERVER,value=$(SERVER),type=PLAINTEXT" \
+		--query 'build.id' --output text)
+	@echo "Build started with ID: $$BUILD_ID"
+	@echo "Waiting for build to complete..."
+	@aws codebuild batch-get-builds --ids $$BUILD_ID --query 'builds[0].buildStatus' --output text | grep -q "SUCCEEDED" || (echo "Build failed!" && exit 1)
+	@echo "Build completed successfully!"
+
+### Step 5: Create the CI/CD pipeline and ECS Service
+deploy-pipeline: build-push-image
+	@echo "Verifying required resources..."
+	@aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?contains(imageTags, `latest`)]' --output text || (echo "Docker image not found in ECR!" && exit 1)
+	@aws ecs describe-clusters --clusters $(CLUSTER) --query 'clusters[0].status' --output text | grep -q "ACTIVE" || (echo "ECS Cluster not active!" && exit 1)
 	@echo "Deploying CloudFormation stack..."
 	@echo "IAM_ROLE_ARN=$(IAM_ROLE_ARN)"
 	@echo "ECR_REPO=$(ECR_REPO)"
@@ -156,90 +178,15 @@ deploy-pipeline: deploy-setup-resources
 			ArtifactBucketName=$(ARTIFACT_BUCKET_NAME) \
 			ECRRepoName=$(ECR_REPO)
 		--capabilities CAPABILITY_NAMED_IAM
-
-
-
-
-###############################
-###############################
-###############################
-
-
-# Trigger CodeBuild to build and push Docker image
-build-push-image:
-	@echo "Triggering CodeBuild to build and push Docker image..."
-	aws codebuild start-build \
-		--project-name $(PROJECT_NAME) \
-		--environment-variables-override \
-			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
-			"name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT" \
-			"name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT" \
-			"name=GITHUB_TOKEN,value=$(GITHUB_TOKEN),type=PLAINTEXT" \
-			"name=GITHUB_OWNER,value=$(GITHUB_OWNER),type=PLAINTEXT" \
-			"name=GITHUB_REPO,value=$(GITHUB_REPO),type=PLAINTEXT" \
-			"name=AUTH_TYPE,value=$(AUTH_TYPE),type=PLAINTEXT" \
-			"name=DOCKERTOKEN,value=$(DOCKERTOKEN),type=PLAINTEXT" \
-			"name=DOCKERUSERNAME,value=$(DOCKERUSERNAME),type=PLAINTEXT" \
-			"name=SERVER,value=$(SERVER),type=PLAINTEXT"
-	@echo "Build process triggered successfully!"
-
-# Deploy ECS Resources (Cluster, Task Definition, Service):
-deploy-ecs:
-	@echo "Deploying ECS-specific resources..."
-	aws cloudformation deploy \
-		--template-file $(PIPELINE_TEMPLATE) \
-		--stack-name $(STACK_NAME) \
-		--parameter-overrides \
-			ClusterName=$(CLUSTER_NAME) \
-			TaskFamily=$(TASK_FAMILY) \
-			SubnetIds=$(SUBNET_IDS) \
-			RepositoryName=$(ECR_REPO_NAME) \
-			GitHubOwner=$(GITHUB_OWNER) \
-			GitHubOAuthToken=$(GITHUB_TOKEN) \
-			GitHubRepo=$(GITHUB_REPO) \
-			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
-			DOCKERUSERNAME=$(DOCKERUSERNAME) \
-			DOCKERTOKEN=$(DOCKERTOKEN) \
-		--capabilities CAPABILITY_NAMED_IAM
-
-# Generate imagedefinitions.json
-generate-imagedefinitions:
-	@echo "Generating imagedefinitions.json for $(CONTAINER_NAME)..."
-	@echo '[{"name": "$(CONTAINER_NAME)", "imageUri": "$(DOCKER_IMAGE)"}]' > ./imagedefinitions.json
-	@cat ./imagedefinitions.json
-
-
-# Deploy CodePipeline
-deploy-cloudformation:
-	@echo "Deploying CloudFormation stack..."
-	@echo "IAM_ROLE_ARN=$(IAM_ROLE_ARN)"
-	aws cloudformation deploy \
-		--template-file $(PIPELINE_TEMPLATE) \
-		--stack-name $(STACK_NAME) \
-		--parameter-overrides \
-			GitHubOAuthToken=$(GITHUB_TOKEN) \
-			GitHubOwner=$(GITHUB_OWNER) \
-			GitHubRepo=$(GITHUB_REPO) \
-			AWSRegion=$(AWS_REGION) \
-			AWSAccountId=$(AWS_ACCOUNT_ID) \
-			AuthType=$(AUTH_TYPE) \
-			Server=$(SERVER) \
-			RepositoryName=$(ECR_REPO_NAME) \
-			ClusterName=$(CLUSTER_NAME) \
-			TaskFamily=$(TASK_FAMILY) \
-			ContainerName=$(CONTAINER_NAME) \
-			SubnetIds=$(SUBNET_IDS) \
-			ProjectName=$(PROJECT_NAME) \
-			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
-			DOCKERUSERNAME=$(DOCKERUSERNAME) \
-			DOCKERTOKEN=$(DOCKERTOKEN) \
-		--capabilities CAPABILITY_NAMED_IAM
+	@echo "Pipeline deployed successfully!"
+	@echo "The pipeline will now monitor GitHub for updates and automatically build and deploy new images."
 
 # ====================
 # Combined Workflow
 # ====================
 
-setup-all: check-aws-credentials deploy-artifact-bucket build-iam-role deploy-setup-resources deploy-pipeline
+# Main target that orchestrates the entire setup process
+setup-all: check-aws-credentials deploy-artifact-bucket build-iam-role deploy-setup-resources build-push-image deploy-pipeline
 
 check-aws-credentials:
 	@echo "Checking AWS credentials..."
