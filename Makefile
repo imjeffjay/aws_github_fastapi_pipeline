@@ -124,10 +124,16 @@ deploy-setup-resources: deploy-artifact-bucket build-iam-role
 		--capabilities CAPABILITY_NAMED_IAM
 
 ### Step 4: Build and push initial Docker image
-build-push-image: deploy-setup-resources
+build-push-image:
+	@echo "Checking CodeBuild project..."
+	@if [ -z "$(CODEBUILD_PROJECT)" ]; then \
+		echo "Error: CODEBUILD_PROJECT is empty. Please check if the setup stack was created successfully."; \
+		exit 1; \
+	fi
+	@echo "Using CodeBuild project: $(CODEBUILD_PROJECT)"
 	@echo "Triggering CodeBuild to build and push Docker image..."
 	@BUILD_ID=$$(aws codebuild start-build \
-		--project-name $(CODEBUILD_PROJECT) \
+		--project-name $(PROJECT_NAME) \
 		--environment-variables-override \
 			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
 			"name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT" \
@@ -142,6 +148,7 @@ build-push-image: deploy-setup-resources
 		--query 'build.id' --output text)
 	@if [ -z "$$BUILD_ID" ]; then \
 		echo "Failed to get build ID from CodeBuild"; \
+		echo "Please check if the project exists and you have permissions to start builds."; \
 		exit 1; \
 	fi
 	@echo "Build started with ID: $$BUILD_ID"
