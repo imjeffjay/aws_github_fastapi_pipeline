@@ -126,7 +126,7 @@ deploy-setup-resources: deploy-artifact-bucket build-iam-role
 ### Step 4: Build and push initial Docker image
 build-push-image: deploy-setup-resources
 	@echo "Triggering CodeBuild to build and push Docker image..."
-	BUILD_ID=$$(aws codebuild start-build \
+	@BUILD_ID=$$(aws codebuild start-build \
 		--project-name $(PROJECT_NAME) \
 		--environment-variables-override \
 			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
@@ -140,10 +140,24 @@ build-push-image: deploy-setup-resources
 			"name=DOCKERUSERNAME,value=$(DOCKERUSERNAME),type=PLAINTEXT" \
 			"name=SERVER,value=$(SERVER),type=PLAINTEXT" \
 		--query 'build.id' --output text)
+	@if [ -z "$$BUILD_ID" ]; then \
+		echo "Failed to get build ID from CodeBuild"; \
+		exit 1; \
+	fi
 	@echo "Build started with ID: $$BUILD_ID"
 	@echo "Waiting for build to complete..."
-	@aws codebuild batch-get-builds --ids $$BUILD_ID --query 'builds[0].buildStatus' --output text | grep -q "SUCCEEDED" || (echo "Build failed!" && exit 1)
-	@echo "Build completed successfully!"
+	@while true; do \
+		BUILD_STATUS=$$(aws codebuild batch-get-builds --ids $$BUILD_ID --query 'builds[0].buildStatus' --output text); \
+		echo "Build status: $$BUILD_STATUS"; \
+		if [ "$$BUILD_STATUS" = "SUCCEEDED" ]; then \
+			echo "Build completed successfully!"; \
+			break; \
+		elif [ "$$BUILD_STATUS" = "FAILED" ]; then \
+			echo "Build failed!"; \
+			exit 1; \
+		fi; \
+		sleep 30; \
+	done
 
 ### Step 5: Create the CI/CD pipeline and ECS Service
 deploy-pipeline: build-push-image
