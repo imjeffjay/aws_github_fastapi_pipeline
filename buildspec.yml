@@ -23,14 +23,13 @@ phases:
       - echo "Building Docker image..."
       - docker build -t $ECR_REPO_NAME .
       - docker tag $ECR_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
+      - echo "Pushing Docker image to ECR..."
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
+      - echo "Docker image pushed successfully!"
 
   post_build:
     commands:
       - echo "======== START POST BUILD ========"
-      - echo "Pushing Docker image to ECR..."
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
-      - echo "Docker image pushed successfully!"
       
       # Create imagedefinitions.json in the root workspace
       - cd ..
