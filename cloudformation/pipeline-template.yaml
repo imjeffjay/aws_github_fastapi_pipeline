@@ -92,10 +92,17 @@ Resources:
         AwsvpcConfiguration:
           Subnets: !Ref SubnetIds
           AssignPublicIp: "ENABLED"
-
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      HealthCheckGracePeriodSeconds: 60
+      EnableECSManagedTags: true
+      EnableExecuteCommand: true
+      PropagateTags: SERVICE
 
   CodePipeline:
     Type: "AWS::CodePipeline::Pipeline"
+    DependsOn: ECSService
     Properties:
       RoleArn: !Ref CodePipelineRoleArn
       ArtifactStore:
