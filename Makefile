@@ -139,21 +139,27 @@ build-push-image:
 			"name=DOCKERTOKEN,value=$(DOCKERTOKEN),type=PLAINTEXT" \
 			"name=DOCKERUSERNAME,value=$(DOCKERUSERNAME),type=PLAINTEXT" \
 			"name=SERVER,value=$(SERVER),type=PLAINTEXT" | cat
-	@echo "Waiting for image to be available in ECR..."
+	@echo "Waiting for new image to be available in ECR..."
 	@TIMEOUT=15  # 15 seconds
 	@START_TIME=$$(date +%s)
 	@while true; do \
 		CURRENT_TIME=$$(date +%s); \
 		ELAPSED=$$((CURRENT_TIME - START_TIME)); \
 		if [ $$ELAPSED -gt $$TIMEOUT ]; then \
-			echo "Timeout waiting for image to be available"; \
+			echo "Timeout waiting for new image to be available"; \
 			exit 1; \
 		fi; \
-		if aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?imageTags[?@==`latest`]]' --output text > /dev/null 2>&1; then \
-			echo "Image is available in ECR!"; \
-			break; \
+		IMAGE_PUSH_TIME=$$(aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?imageTags[?@==`latest`]].imagePushedAt' --output text); \
+		if [ ! -z "$$IMAGE_PUSH_TIME" ]; then \
+			PUSH_TIMESTAMP=$$(date -d "$$IMAGE_PUSH_TIME" +%s); \
+			CURRENT_TIMESTAMP=$$(date +%s); \
+			TIME_DIFF=$$((CURRENT_TIMESTAMP - PUSH_TIMESTAMP)); \
+			if [ $$TIME_DIFF -lt 30 ]; then \
+				echo "New image is available in ECR!"; \
+				break; \
+			fi; \
 		fi; \
-		echo "Waiting for image to be available..."; \
+		echo "Waiting for new image to be available..."; \
 		sleep 5; \
 	done
 
