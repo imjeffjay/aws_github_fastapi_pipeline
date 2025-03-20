@@ -143,7 +143,8 @@ build-push-image:
 			"name=AUTH_TYPE,value=$(AUTH_TYPE),type=PLAINTEXT" \
 			"name=DOCKERTOKEN,value=$(DOCKERTOKEN),type=PLAINTEXT" \
 			"name=DOCKERUSERNAME,value=$(DOCKERUSERNAME),type=PLAINTEXT" \
-			"name=SERVER,value=$(SERVER),type=PLAINTEXT" | cat
+			"name=SERVER,value=$(SERVER),type=PLAINTEXT" \
+			"name=CONTAINER_NAME,value=$(CONTAINER_NAME),type=PLAINTEXT" | cat
 	@echo "Waiting for new image to be available in ECR..."
 	@TIMEOUT=15  # 15 seconds
 	@START_TIME=$$(date +%s)
