@@ -32,14 +32,14 @@ phases:
     commands:
       - echo "======== START POST BUILD ========"
       - echo "Writing image definitions file..."
-      - cd ..
-      - echo '[{"name":"'"$CONTAINER_NAME"'","imageUri":"'"$AWS_ACCOUNT_ID"'.dkr.ecr.'"$AWS_REGION"'.amazonaws.com/'"$ECR_REPO_NAME"':latest"}]' > imagedefinitions.json
+      - printf '[{"name":"%s","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:latest"}]' "$CONTAINER_NAME" "$AWS_ACCOUNT_ID" "$AWS_REGION" "$ECR_REPO_NAME" > imagedefinitions.json
       - echo "Validating imagedefinitions.json format..."
-      - cat imagedefinitions.json
+      - cat imagedefinitions.json | jq '.' || { echo "Invalid JSON format!"; exit 1; }
       - echo "======== END POST BUILD ========"
 
 artifacts:
   files:
-    - 'imagedefinitions.json'
+    - imagedefinitions.json
+    - '**/*'
 
 
