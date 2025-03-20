@@ -140,10 +140,12 @@ build-push-image:
 			"name=DOCKERUSERNAME,value=$(DOCKERUSERNAME),type=PLAINTEXT" \
 			"name=SERVER,value=$(SERVER),type=PLAINTEXT" | cat
 	@echo "Waiting for image to be available in ECR..."
-	@TIMEOUT=900  # 15 minutes in seconds
+	@TIMEOUT=15  # 15 seconds
 	@START_TIME=$$(date +%s)
 	@while true; do \
-		if [ $$(($$(date +%s) - START_TIME)) -gt $$TIMEOUT ]; then \
+		CURRENT_TIME=$$(date +%s); \
+		ELAPSED=$$((CURRENT_TIME - START_TIME)); \
+		if [ $$ELAPSED -gt $$TIMEOUT ]; then \
 			echo "Timeout waiting for image to be available"; \
 			exit 1; \
 		fi; \
@@ -152,7 +154,7 @@ build-push-image:
 			break; \
 		fi; \
 		echo "Waiting for image to be available..."; \
-		sleep 30; \
+		sleep 5; \
 	done
 
 ### Step 5: Create the CI/CD pipeline and ECS Service
