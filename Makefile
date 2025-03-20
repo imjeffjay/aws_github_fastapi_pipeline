@@ -194,8 +194,8 @@ deploy-pipeline: build-push-image
 			DOCKERUSERNAME=$(DOCKERUSERNAME) \
 			DOCKERTOKEN=$(DOCKERTOKEN) \
 			ArtifactBucketName=$(ARTIFACT_BUCKET_NAME) \
-			ECRRepoName=$(ECR_REPO) \
-		--capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM
+			ECRRepoName=$(ECR_REPO)
+		--capabilities CAPABILITY_NAMED_IAM
 	@echo "Pipeline deployed successfully!"
 	@echo "The pipeline will now monitor GitHub for updates and automatically build and deploy new images."
 
@@ -215,7 +215,12 @@ check-aws-credentials:
 # Cleanup
 # ====================
 
-cleanup:
+cleanup-bucket:
+	@echo "Cleaning up general purpose bucket..."
+	@aws s3 rm s3://$(BUCKET_NAME) --recursive || true
+	@aws s3api delete-bucket --bucket $(BUCKET_NAME) || true
+
+cleanup: cleanup-bucket
 	@echo "Checking for existing stacks..."
 	@if aws cloudformation describe-stacks --stack-name $(PIPELINE_STACK_NAME) 2>/dev/null | cat; then \
 		echo "Deleting pipeline stack $(PIPELINE_STACK_NAME)..."; \
