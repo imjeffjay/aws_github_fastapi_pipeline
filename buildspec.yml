@@ -37,12 +37,12 @@ phases:
       - echo "AWS_REGION=$AWS_REGION"
       - echo "======== START POST BUILD ========"
       - echo "Writing image definitions file..."
-      - printf '[{"name":"%s","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:latest"}]\n' "$CONTAINER_NAME" "$AWS_ACCOUNT_ID" "$AWS_REGION" "$ECR_REPO_NAME" > imagedefinitions.json
+      - printf '[{"name":"%s","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:latest"}]' "$CONTAINER_NAME" "$AWS_ACCOUNT_ID" "$AWS_REGION" "$ECR_REPO_NAME" > imagedefinitions.json
       - echo "Validating imagedefinitions.json format..."
       - cat imagedefinitions.json | jq '.' || { echo "Invalid JSON format!"; exit 1; }
       - echo "Checking if imagedefinitions.json exists before uploading artifacts..."
       - ls -lah
-      - test -f imagedefinitions.json && echo "imagedefinitions.json exists!" || { echo "ERROR: imagedefinitions.json is missing!"; exit 1; }
+      - if [ -f imagedefinitions.json ]; then echo "imagedefinitions.json exists!"; else echo "ERROR: imagedefinitions.json is missing!"; exit 1; fi
       - echo "======== END POST BUILD ========"
 
 artifacts:
