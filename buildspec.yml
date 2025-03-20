@@ -34,7 +34,8 @@ phases:
       # Create imagedefinitions.json in the root of the workspace
       - cd ..
       - echo "Generating imagedefinitions.json..."
-      - jq -n --arg name "$CONTAINER_NAME" --arg uri "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest" '[{"name": $name, "imageUri": $uri}]' > imagedefinitions.json
+      - |
+        echo '[{"name":"'"$CONTAINER_NAME"'","imageUri":"'"$AWS_ACCOUNT_ID"'.dkr.ecr.'"$AWS_REGION"'.amazonaws.com/'"$ECR_REPO_NAME"':latest"}]' > imagedefinitions.json
 
       # Debugging steps
       - echo "Checking imagedefinitions.json existence..."
