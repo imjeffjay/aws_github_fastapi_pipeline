@@ -19,33 +19,27 @@ Parameters:
     Description: "Docker Hub personal access token for authentication"
   AWSRegion:
     Type: String
-    Default: "us-east-1"
     Description: "AWS Region"
   AWSAccountId:
     Type: String
     Description: "AWS Account ID"
   ECRRepoName:
     Type: String
-    Default: "fastapi-app"
     Description: "ECR Repository Name"
   ClusterName:
     Type: String
-    Default: "FastAPICluster"
     Description: "ECS Cluster Name"
   TaskFamily:
     Type: String
-    Default: "fastapi-task"
     Description: "ECS Task Definition Family"
   ContainerName:
     Type: String
-    Default: "fastapi-container"
     Description: "ECS Container Name"
   SubnetIds:
     Type: CommaDelimitedList
     Description: "List of Subnet IDs for ECS tasks"
   ProjectName:
     Type: String
-    Default: "FastAPIBuildProject"
     Description: "CodeBuild Project Name"
   ArtifactBucketName:
     Type: String
@@ -55,11 +49,9 @@ Parameters:
     Description: "ARN of the CodePipeline IAM Role"
   AuthType:
     Type: String
-    Default: "PERSONAL_ACCESS_TOKEN"
     Description: "Authentication type for GitHub (e.g., PERSONAL_ACCESS_TOKEN)"
   Server:
     Type: String
-    Default: "GitHub"
     Description: "The source control server (e.g., GitHub, Bitbucket)"
 
 Resources:
