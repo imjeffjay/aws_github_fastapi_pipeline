@@ -84,6 +84,7 @@ Resources:
   ECSService:
     Type: "AWS::ECS::Service"
     Properties:
+      ServiceName: !Sub "${ProjectName}-service"
       Cluster: !Ref ClusterName
       DesiredCount: 1
       TaskDefinition: !Ref ECSTaskDefinition
@@ -150,7 +151,7 @@ Resources:
                 - Name: "BuildOutput"
               Configuration:
                 ClusterName: !Ref ClusterName
-                ServiceName: !Ref ECSService
+                ServiceName: !Sub "${ProjectName}-service"
                 FileName: "imagedefinitions.json"
 
 Outputs:
