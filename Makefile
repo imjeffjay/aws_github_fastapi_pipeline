@@ -80,12 +80,17 @@ SUBNET_IDS = $(shell aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(VP
 
 ### Step 1: Create artifact bucket for storing pipeline artifacts
 deploy-artifact-bucket:
-	@echo "Deploying artifact bucket..."
-	aws cloudformation deploy \
-		--template-file $(BUCKET_TEMPLATE) \
-		--stack-name $(BUCKET_STACK_NAME) \
-		--parameter-overrides \
-			BucketName=$(BUCKET_NAME)
+	@echo "Checking for existing artifact bucket..."
+	@if ! aws s3api head-bucket --bucket $(BUCKET_NAME) 2>/dev/null; then \
+		echo "Creating new artifact bucket $(BUCKET_NAME)..."; \
+		aws cloudformation deploy \
+			--template-file $(BUCKET_TEMPLATE) \
+			--stack-name $(BUCKET_STACK_NAME) \
+			--parameter-overrides \
+				BucketName=$(BUCKET_NAME); \
+	else \
+		echo "Using existing artifact bucket $(BUCKET_NAME)"; \
+	fi
 
 ### Step 2: Create IAM roles and permissions
 build-iam-role:
@@ -98,7 +103,7 @@ build-iam-role:
 			SecretArn=$(SECRET_ARN) \
 			AWSAccountId=$(AWS_ACCOUNT_ID) \
 			AWSRegion=$(AWS_REGION) \
-			ArtifactBucketName=$(ARTIFACT_BUCKET_NAME) \
+			ArtifactBucketName=$(BUCKET_NAME) \
 			ArtifactBucketArn=$(ARTIFACT_BUCKET_ARN)
 	@echo "IAM roles deployed successfully!"
 
@@ -172,7 +177,7 @@ deploy-pipeline: build-push-image
 	@echo "IAM_ROLE_ARN=$(IAM_ROLE_ARN)"
 	@echo "ECR_REPO=$(ECR_REPO)"
 	@echo "CLUSTER=$(CLUSTER)"
-	@echo "ARTIFACT_BUCKET=$(ARTIFACT_BUCKET)"
+	@echo "ARTIFACT_BUCKET=$(ARTIFACT_BUCKET_NAME)"
 
 	aws cloudformation deploy \
 		--template-file $(PIPELINE_TEMPLATE) \
