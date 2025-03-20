@@ -31,20 +31,18 @@ phases:
   post_build:
     commands:
       - echo "======== START POST BUILD ========"
-      
-      # Create imagedefinitions.json in the root workspace
-      - cd ..
       - echo "Writing image definitions file..."
-      - echo '[{"name":"'"$CONTAINER_NAME"'","imageUri":"'"$AWS_ACCOUNT_ID"'.dkr.ecr.'"$AWS_REGION"'.amazonaws.com/'"$ECR_REPO_NAME"':latest"}]' > imagedefinitions.json
-
-      # Debugging steps
+      - cd ..
+      - echo '[{"name":"'"$CONTAINER_NAME"'","imageUri":"'"$AWS_ACCOUNT_ID"'.dkr.ecr.'"$AWS_REGION"'.amazonaws.com/'"$ECR_REPO_NAME"':latest"}]' | jq '.' > imagedefinitions.json
+      - echo "Validating imagedefinitions.json format..."
+      - jq '.' imagedefinitions.json || (echo "Invalid JSON format!" && exit 1)
       - echo "Checking imagedefinitions.json existence..."
-      - ls -lah 
+      - ls -lah
       - cat imagedefinitions.json
       - echo "======== END POST BUILD ========"
 
 artifacts:
   files:
-    - imagedefinitions.json
+    - '**/*'
 
 
