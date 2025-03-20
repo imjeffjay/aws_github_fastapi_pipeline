@@ -178,7 +178,6 @@ deploy-pipeline: build-push-image
 		--template-file $(PIPELINE_TEMPLATE) \
 		--stack-name $(PIPELINE_STACK_NAME) \
 		--parameter-overrides \
-    	--capabilities CAPABILITY_IAM \ 
 			GitHubOAuthToken=$(GITHUB_TOKEN) \
 			GitHubOwner=$(GITHUB_OWNER) \
 			GitHubRepo=$(GITHUB_REPO) \
@@ -195,7 +194,8 @@ deploy-pipeline: build-push-image
 			DOCKERUSERNAME=$(DOCKERUSERNAME) \
 			DOCKERTOKEN=$(DOCKERTOKEN) \
 			ArtifactBucketName=$(ARTIFACT_BUCKET_NAME) \
-			ECRRepoName=$(ECR_REPO)
+			ECRRepoName=$(ECR_REPO) \
+		--capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM
 	@echo "Pipeline deployed successfully!"
 	@echo "The pipeline will now monitor GitHub for updates and automatically build and deploy new images."
 
