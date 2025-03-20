@@ -31,7 +31,8 @@ phases:
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
       - echo "Docker image pushed successfully!"
       
-      # Ensure the file is created in the right location
+      # Create imagedefinitions.json in the root of the workspace
+      - cd ..
       - echo "Generating imagedefinitions.json..."
       - echo '[{"name":"fastapi-container","imageUri":"'$AWS_ACCOUNT_ID'.dkr.ecr.'$AWS_REGION'.amazonaws.com/'$ECR_REPO_NAME':latest"}]' > imagedefinitions.json
 
@@ -43,7 +44,7 @@ phases:
 
 artifacts:
   files:
-    - repo/imagedefinitions.json
+    - imagedefinitions.json
 
 env:
   variables:
