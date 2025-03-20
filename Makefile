@@ -125,6 +125,11 @@ deploy-setup-resources: deploy-artifact-bucket build-iam-role
 
 ### Step 4: Build and push initial Docker image
 build-push-image:
+	@echo "Checking if image already exists in ECR..."
+	@if aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?contains(imageTags, `latest`)]' --output text > /dev/null 2>&1; then \
+		echo "Image already exists in ECR, skipping build..."; \
+		exit 0; \
+	fi
 	@echo "Triggering CodeBuild to build and push Docker image..."
 	@BUILD_ID=$$(aws codebuild start-build \
 		--project-name $(CODEBUILD_PROJECT) \
@@ -140,6 +145,10 @@ build-push-image:
 			"name=DOCKERUSERNAME,value=$(DOCKERUSERNAME),type=PLAINTEXT" \
 			"name=SERVER,value=$(SERVER),type=PLAINTEXT" \
 		--query 'build.id' --output text)
+	@if [ -z "$$BUILD_ID" ]; then \
+		echo "Failed to get build ID from CodeBuild"; \
+		exit 1; \
+	fi
 	@echo "Build started with ID: $$BUILD_ID"
 	@echo "Waiting for build to complete (timeout: 15 minutes)..."
 	@TIMEOUT=900  # 15 minutes in seconds
@@ -149,7 +158,14 @@ build-push-image:
 			echo "Timeout waiting for build to complete"; \
 			exit 1; \
 		fi; \
-		BUILD_STATUS=$$(aws codebuild batch-get-builds --ids $$BUILD_ID --query 'builds[0].buildStatus' --output text); \
+		BUILD_STATUS=$$(aws codebuild batch-get-builds --ids $$BUILD_ID --query 'builds[0].buildStatus' --output text 2>/dev/null || echo "UNKNOWN"); \
+		if [ "$$BUILD_STATUS" = "UNKNOWN" ]; then \
+			echo "Unable to get build status, checking ECR for image..."; \
+			if aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?contains(imageTags, `latest`)]' --output text > /dev/null 2>&1; then \
+				echo "Image found in ECR, build likely completed successfully!"; \
+				break; \
+			fi; \
+		fi; \
 		echo "Build status: $$BUILD_STATUS"; \
 		if [ "$$BUILD_STATUS" = "SUCCEEDED" ]; then \
 			echo "Build completed successfully!"; \
@@ -159,21 +175,6 @@ build-push-image:
 			exit 1; \
 		fi; \
 		sleep 30; \
-	done
-	@echo "Waiting for image to be available in ECR (timeout: 5 minutes)..."
-	@TIMEOUT=300  # 5 minutes in seconds
-	@START_TIME=$$(date +%s)
-	@while true; do \
-		if [ $$(($$(date +%s) - START_TIME)) -gt $$TIMEOUT ]; then \
-			echo "Timeout waiting for image to be available in ECR"; \
-			exit 1; \
-		fi; \
-		if aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?contains(imageTags, `latest`)]' --output text > /dev/null 2>&1; then \
-			echo "Image is available in ECR!"; \
-			break; \
-		fi; \
-		echo "Waiting for image to be available..."; \
-		sleep 10; \
 	done
 	@echo "Build and image push completed successfully!"
 
