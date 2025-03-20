@@ -65,6 +65,7 @@ Resources:
         - FARGATE
       NetworkMode: awsvpc
       ExecutionRoleArn: !Ref CodePipelineRoleArn
+      TaskRoleArn: !Ref CodePipelineRoleArn
       ContainerDefinitions:
         - Name: !Ref ContainerName
           Image: !Sub "${AWSAccountId}.dkr.ecr.${AWSRegion}.amazonaws.com/${ECRRepoName}:latest"
