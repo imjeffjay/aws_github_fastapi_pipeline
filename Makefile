@@ -149,7 +149,7 @@ build-push-image:
 			echo "Timeout waiting for image to be available"; \
 			exit 1; \
 		fi; \
-		if aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?contains(imageTags, `latest`)]' --output text > /dev/null 2>&1; then \
+		if aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?imageTags[?@==`latest`]]' --output text > /dev/null 2>&1; then \
 			echo "Image is available in ECR!"; \
 			break; \
 		fi; \
