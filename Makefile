@@ -194,8 +194,8 @@ deploy-pipeline: build-push-image
 			DOCKERUSERNAME=$(DOCKERUSERNAME) \
 			DOCKERTOKEN=$(DOCKERTOKEN) \
 			ArtifactBucketName=$(ARTIFACT_BUCKET_NAME) \
-			ECRRepoName=$(ECR_REPO)
-		--capabilities CAPABILITY_NAMED_IAM
+			ECRRepoName=$(ECR_REPO) \
+		--capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM
 	@echo "Pipeline deployed successfully!"
 	@echo "The pipeline will now monitor GitHub for updates and automatically build and deploy new images."
 
