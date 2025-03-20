@@ -41,9 +41,9 @@ AWS_REGION = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRET
 ### From Setup-Resoucres
 ARTIFACT_BUCKET_NAME=$(shell aws s3api list-buckets --query "Buckets[?contains(Name, \`${AWS_ACCOUNT_ID}-\`)].Name" --output text | grep $(AWS_REGION) || echo "")
 ARTIFACT_BUCKET_ARN=$(shell echo "arn:aws:s3:::$(ARTIFACT_BUCKET_NAME)")
-ECR_REPO=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ECRRepository'].PhysicalResourceId" --output text)
-CLUSTER=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?LogicalResourceId=='ECSCluster'].PhysicalResourceId" --output text)
-CODEBUILD_PROJECT=$(shell aws cloudformation describe-stack-resources --stack-name fastapi2-SETUPstack --query "StackResources[?ResourceType=='AWS::CodeBuild::Project'].PhysicalResourceId" --output text)
+ECR_REPO=$(shell aws cloudformation describe-stack-resources --stack-name $(SETUP_STACK_NAME) --query "StackResources[?LogicalResourceId=='ECRRepository'].PhysicalResourceId" --output text)
+CLUSTER=$(shell aws cloudformation describe-stack-resources --stack-name $(SETUP_STACK_NAME) --query "StackResources[?LogicalResourceId=='ECSCluster'].PhysicalResourceId" --output text)
+CODEBUILD_PROJECT=$(shell aws cloudformation describe-stack-resources --stack-name $(SETUP_STACK_NAME) --query "StackResources[?ResourceType=='AWS::CodeBuild::Project'].PhysicalResourceId" --output text)
 
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
@@ -137,7 +137,7 @@ build-push-image:
 		--environment-variables-override \
 			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
 			"name=AWS_ACCOUNT_ID,value=$(AWS_ACCOUNT_ID),type=PLAINTEXT" \
-			"name=ECR_REPO_NAME,value=$(ECR_REPO_NAME),type=PLAINTEXT" \
+			"name=ECR_REPO_NAME,value=$(ECR_REPO),type=PLAINTEXT" \
 			"name=GITHUB_TOKEN,value=$(GITHUB_TOKEN),type=PLAINTEXT" \
 			"name=GITHUB_OWNER,value=$(GITHUB_OWNER),type=PLAINTEXT" \
 			"name=GITHUB_REPO,value=$(GITHUB_REPO),type=PLAINTEXT" \
@@ -220,24 +220,24 @@ check-aws-credentials:
 
 cleanup:
 	@echo "Checking for existing stacks..."
-	@if aws cloudformation describe-stacks --stack-name $(PIPELINE_STACK_NAME) 2>/dev/null; then \
+	@if aws cloudformation describe-stacks --stack-name $(PIPELINE_STACK_NAME) 2>/dev/null | cat; then \
 		echo "Deleting pipeline stack $(PIPELINE_STACK_NAME)..."; \
 		aws cloudformation delete-stack --stack-name $(PIPELINE_STACK_NAME); \
 		aws cloudformation wait stack-delete-complete --stack-name $(PIPELINE_STACK_NAME); \
 	fi
-	@if aws cloudformation describe-stacks --stack-name $(SETUP_STACK_NAME) 2>/dev/null; then \
+	@if aws cloudformation describe-stacks --stack-name $(SETUP_STACK_NAME) 2>/dev/null | cat; then \
 		echo "Deleting ECR repository first..."; \
 		aws ecr delete-repository --repository-name $(ECR_REPO_NAME) --force; \
 		echo "Deleting setup resources stack $(SETUP_STACK_NAME)..."; \
 		aws cloudformation delete-stack --stack-name $(SETUP_STACK_NAME); \
 		aws cloudformation wait stack-delete-complete --stack-name $(SETUP_STACK_NAME); \
 	fi
-	@if aws cloudformation describe-stacks --stack-name $(IAM_STACK_NAME) 2>/dev/null; then \
+	@if aws cloudformation describe-stacks --stack-name $(IAM_STACK_NAME) 2>/dev/null | cat; then \
 		echo "Deleting IAM stack $(IAM_STACK_NAME)..."; \
 		aws cloudformation delete-stack --stack-name $(IAM_STACK_NAME); \
 		aws cloudformation wait stack-delete-complete --stack-name $(IAM_STACK_NAME); \
 	fi
-	@if aws cloudformation describe-stacks --stack-name $(BUCKET_STACK_NAME) 2>/dev/null; then \
+	@if aws cloudformation describe-stacks --stack-name $(BUCKET_STACK_NAME) 2>/dev/null | cat; then \
 		echo "Deleting artifact bucket stack $(BUCKET_STACK_NAME)..."; \
 		aws cloudformation delete-stack --stack-name $(BUCKET_STACK_NAME); \
 		aws cloudformation wait stack-delete-complete --stack-name $(BUCKET_STACK_NAME); \
