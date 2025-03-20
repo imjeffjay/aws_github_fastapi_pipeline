@@ -215,12 +215,12 @@ check-aws-credentials:
 # Cleanup
 # ====================
 
-cleanup-bucket:
-	@echo "Cleaning up general purpose bucket..."
+cleanup:
+	@echo "Cleaning up general purpose bucket first..."
 	@aws s3 rm s3://$(BUCKET_NAME) --recursive || true
 	@aws s3api delete-bucket --bucket $(BUCKET_NAME) || true
+	@echo "Bucket cleanup completed"
 
-cleanup: cleanup-bucket
 	@echo "Checking for existing stacks..."
 	@if aws cloudformation describe-stacks --stack-name $(PIPELINE_STACK_NAME) 2>/dev/null | cat; then \
 		echo "Deleting pipeline stack $(PIPELINE_STACK_NAME)..."; \
