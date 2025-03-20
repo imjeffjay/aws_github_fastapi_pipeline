@@ -164,7 +164,7 @@ Resources:
   CodeBuildProject:
     Type: "AWS::CodeBuild::Project"
     Properties:
-      Name: !Ref ProjectName
+      Name: !Sub "${ProjectName}-pipeline"
       ServiceRole: !GetAtt CodeBuildServiceRole.Arn
       Artifacts:
         Type: CODEPIPELINE
