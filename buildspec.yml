@@ -47,11 +47,4 @@ artifacts:
   files:
     - imagedefinitions.json
 
-env:
-  variables:
-    AWS_REGION: "us-east-1"
-    AWS_ACCOUNT_ID: "475634715655"
-    AUTH_TYPE: "PERSONAL_ACCESS_TOKEN"
-    SERVER: "GitHub"
-
 
