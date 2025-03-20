@@ -120,25 +120,12 @@ Resources:
         - Key: ProjectName
           Value: FastAPI-Pipeline
       
-  CodeBuildServiceRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Service: "codebuild.amazonaws.com"
-            Action: "sts:AssumeRole"
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/AdministratorAccess"
-
 Outputs:
-  CodePipelineRole:
-    Description: "The CodePipeline IAM Role"
+  CodePipelineRoleArn:
+    Description: "The ARN of the CodePipeline IAM Role"
     Value: !GetAtt CodePipelineRole.Arn
-  CodeBuildServiceRole:
-    Description: "The CodeBuild Service Role"
-    Value: !GetAtt CodeBuildServiceRole.Arn
+    Export:
+      Name: CodePipelineRoleArn
+
 
 

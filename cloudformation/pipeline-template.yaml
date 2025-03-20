@@ -145,6 +145,7 @@ Resources:
                 ClusterName: !Ref ClusterName
                 ServiceName: !Sub "${ProjectName}-service"
                 FileName: "imagedefinitions.json"
+              RunOrder: 1
 
   CodeBuildServiceRole:
     Type: "AWS::IAM::Role"
