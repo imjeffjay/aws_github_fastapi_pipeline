@@ -160,7 +160,7 @@ build-push-image:
 ### Step 5: Create the CI/CD pipeline and ECS Service
 deploy-pipeline: build-push-image
 	@echo "Verifying required resources..."
-	@aws ecr list-images --repository-name $(ECR_REPO_NAME) --query 'imageIds[?contains(imageTag, `latest`)]' --output text || (echo "Docker image not found in ECR!" && exit 1)
+	@aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?imageTags[?@==`latest`]]' --output text || (echo "Docker image not found in ECR!" && exit 1)
 	@aws ecs describe-clusters --clusters $(CLUSTER) --query 'clusters[0].status' --output text | grep -q "ACTIVE" || (echo "ECS Cluster not active!" && exit 1)
 	@echo "Deploying CloudFormation stack..."
 	@echo "IAM_ROLE_ARN=$(IAM_ROLE_ARN)"
