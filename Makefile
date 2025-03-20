@@ -173,6 +173,14 @@ deploy-pipeline: build-push-image
 	@echo "Verifying required resources..."
 	@aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?imageTags[?@==`latest`]]' --output text || (echo "Docker image not found in ECR!" && exit 1)
 	@aws ecs describe-clusters --clusters $(CLUSTER) --query 'clusters[0].status' --output text | grep -q "ACTIVE" || (echo "ECS Cluster not active!" && exit 1)
+	
+	@echo "Checking stack status..."
+	@if aws cloudformation describe-stacks --stack-name $(PIPELINE_STACK_NAME) 2>/dev/null | grep -q "ROLLBACK_COMPLETE"; then \
+		echo "Stack is in ROLLBACK_COMPLETE state. Deleting before redeploying..."; \
+		aws cloudformation delete-stack --stack-name $(PIPELINE_STACK_NAME); \
+		aws cloudformation wait stack-delete-complete --stack-name $(PIPELINE_STACK_NAME); \
+	fi
+	
 	@echo "Deploying CloudFormation stack..."
 	@echo "IAM_ROLE_ARN=$(IAM_ROLE_ARN)"
 	@echo "ECR_REPO=$(ECR_REPO)"
