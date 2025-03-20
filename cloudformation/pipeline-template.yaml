@@ -132,6 +132,10 @@ Resources:
                 - Name: "BuildOutput"
               Configuration:
                 ProjectName: !Ref ProjectName
+                EnvironmentVariables:
+                  - Name: "CONTAINER_NAME"
+                    Value: !Ref ContainerName
+                    Type: PLAINTEXT
         - Name: "Deploy"
           Actions:
             - Name: "Deploy"
