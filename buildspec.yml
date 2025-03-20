@@ -30,9 +30,15 @@ phases:
 
   post_build:
     commands:
+    commands:
+      - echo "======== DEBUG: Checking Environment Variables ========"
+      - echo "CONTAINER_NAME=$CONTAINER_NAME"
+      - echo "ECR_REPO_NAME=$ECR_REPO_NAME"
+      - echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID"
+      - echo "AWS_REGION=$AWS_REGION"
       - echo "======== START POST BUILD ========"
       - echo "Writing image definitions file..."
-      - printf '[{"name":"%s","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:latest"}]' "$CONTAINER_NAME" "$AWS_ACCOUNT_ID" "$AWS_REGION" "$ECR_REPO_NAME" > imagedefinitions.json
+      - printf '[{"name":"%s","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:latest"}]\n' "$CONTAINER_NAME" "$AWS_ACCOUNT_ID" "$AWS_REGION" "$ECR_REPO_NAME" > imagedefinitions.json
       - echo "Validating imagedefinitions.json format..."
       - cat imagedefinitions.json | jq '.' || { echo "Invalid JSON format!"; exit 1; }
       - echo "======== END POST BUILD ========"
