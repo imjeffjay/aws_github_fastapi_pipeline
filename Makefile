@@ -125,11 +125,6 @@ deploy-setup-resources: deploy-artifact-bucket build-iam-role
 
 ### Step 4: Build and push initial Docker image
 build-push-image:
-	@echo "Checking if image already exists in ECR..."
-	@if aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?contains(imageTags, `latest`)]' --output text > /dev/null 2>&1; then \
-		echo "Image already exists in ECR, skipping build..."; \
-		exit 0; \
-	fi
 	@echo "Triggering CodeBuild to build and push Docker image..."
 	@BUILD_ID=$$(aws codebuild start-build \
 		--project-name $(CODEBUILD_PROJECT) \
@@ -144,9 +139,14 @@ build-push-image:
 			"name=DOCKERTOKEN,value=$(DOCKERTOKEN),type=PLAINTEXT" \
 			"name=DOCKERUSERNAME,value=$(DOCKERUSERNAME),type=PLAINTEXT" \
 			"name=SERVER,value=$(SERVER),type=PLAINTEXT" \
-		--query 'build.id' --output text)
-	@if [ -z "$$BUILD_ID" ]; then \
-		echo "Failed to get build ID from CodeBuild"; \
+		--query 'build.id' --output text | cat)
+	@if [ -z "$$BUILD_ID" ] || [ "$$BUILD_ID" = "None" ]; then \
+		echo "Failed to get build ID from CodeBuild. Checking if image exists in ECR..."; \
+		if aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?contains(imageTags, `latest`)]' --output text > /dev/null 2>&1; then \
+			echo "Image already exists in ECR, proceeding..."; \
+			exit 0; \
+		fi; \
+		echo "No image found in ECR and failed to start build. Please check CodeBuild project configuration."; \
 		exit 1; \
 	fi
 	@echo "Build started with ID: $$BUILD_ID"
