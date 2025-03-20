@@ -31,9 +31,10 @@ phases:
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
       - echo "Docker image pushed successfully!"
       
-      # Create imagedefinitions.json in the workspace
+      # Create imagedefinitions.json in the root workspace
+      - cd ..
       - echo "Generating imagedefinitions.json..."
-      - echo '[{"name":"'"$CONTAINER_NAME"'","imageUri":"'"$AWS_ACCOUNT_ID"'.dkr.ecr.'"$AWS_REGION"'.amazonaws.com/'"$ECR_REPO_NAME"':latest"}]' > imagedefinitions.json
+      - echo "[{\"name\":\"$CONTAINER_NAME\",\"imageUri\":\"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest\"}]" > imagedefinitions.json
 
       # Debugging steps
       - echo "Checking imagedefinitions.json existence..."
