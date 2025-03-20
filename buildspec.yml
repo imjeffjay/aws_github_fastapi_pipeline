@@ -30,7 +30,7 @@ phases:
 
   post_build:
     commands:
-      - echo "======== DEBUG: Checking Environment Variables ========"
+      - echo "======== DEBUG Checking Environment Variables ========"
       - echo "CONTAINER_NAME=$CONTAINER_NAME"
       - echo "ECR_REPO_NAME=$ECR_REPO_NAME"
       - echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID"
@@ -42,7 +42,7 @@ phases:
       - cat imagedefinitions.json | jq '.' || { echo "Invalid JSON format!"; exit 1; }
       - echo "Checking if imagedefinitions.json exists before uploading artifacts..."
       - ls -lah
-      - if [ -f imagedefinitions.json ]; then echo "imagedefinitions.json exists!"; else echo "ERROR: imagedefinitions.json is missing!"; exit 1; fi
+      - if [ -f imagedefinitions.json ]; then echo "imagedefinitions.json exists!"; else echo "ERROR imagedefinitions.json is missing!"; exit 1; fi
       - echo "======== END POST BUILD ========"
 
 artifacts:
