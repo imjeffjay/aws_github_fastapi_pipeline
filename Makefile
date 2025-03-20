@@ -189,7 +189,7 @@ deploy-pipeline: build-push-image
 			TaskFamily=$(TASK_FAMILY) \
 			ContainerName=$(CONTAINER_NAME) \
 			SubnetIds=$(SUBNET_IDS) \
-			ProjectName=$(CODEBUILD_PROJECT) \
+			ProjectName=$(PROJECT_NAME) \
 			CodePipelineRoleArn=$(IAM_ROLE_ARN) \
 			DOCKERUSERNAME=$(DOCKERUSERNAME) \
 			DOCKERTOKEN=$(DOCKERTOKEN) \
