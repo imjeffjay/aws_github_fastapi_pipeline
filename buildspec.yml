@@ -35,7 +35,7 @@ phases:
       # Create imagedefinitions.json in the root workspace
       - cd ..
       - echo "Writing image definitions file..."
-      - printf '[{"name":"%s","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:latest"}]' "$CONTAINER_NAME" "$AWS_ACCOUNT_ID" "$AWS_REGION" "$ECR_REPO_NAME" > imagedefinitions.json
+      - echo '[{"name":"'"$CONTAINER_NAME"'","imageUri":"'"$AWS_ACCOUNT_ID"'.dkr.ecr.'"$AWS_REGION"'.amazonaws.com/'"$ECR_REPO_NAME"':latest"}]' > imagedefinitions.json
 
       # Debugging steps
       - echo "Checking imagedefinitions.json existence..."
