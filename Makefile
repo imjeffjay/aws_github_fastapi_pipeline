@@ -126,7 +126,7 @@ deploy-setup-resources: deploy-artifact-bucket build-iam-role
 ### Step 4: Build and push initial Docker image
 build-push-image:
 	@echo "Triggering CodeBuild to build and push Docker image..."
-	@BUILD_ID=$$(aws codebuild start-build \
+	@aws codebuild start-build \
 		--project-name $(CODEBUILD_PROJECT) \
 		--environment-variables-override \
 			"name=AWS_REGION,value=$(AWS_REGION),type=PLAINTEXT" \
@@ -138,45 +138,22 @@ build-push-image:
 			"name=AUTH_TYPE,value=$(AUTH_TYPE),type=PLAINTEXT" \
 			"name=DOCKERTOKEN,value=$(DOCKERTOKEN),type=PLAINTEXT" \
 			"name=DOCKERUSERNAME,value=$(DOCKERUSERNAME),type=PLAINTEXT" \
-			"name=SERVER,value=$(SERVER),type=PLAINTEXT" \
-		--query 'build.id' --output text | cat)
-	@if [ -z "$$BUILD_ID" ] || [ "$$BUILD_ID" = "None" ]; then \
-		echo "Failed to get build ID from CodeBuild. Checking if image exists in ECR..."; \
-		if aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?contains(imageTags, `latest`)]' --output text > /dev/null 2>&1; then \
-			echo "Image already exists in ECR, proceeding..."; \
-			exit 0; \
-		fi; \
-		echo "No image found in ECR and failed to start build. Please check CodeBuild project configuration."; \
-		exit 1; \
-	fi
-	@echo "Build started with ID: $$BUILD_ID"
-	@echo "Waiting for build to complete (timeout: 15 minutes)..."
+			"name=SERVER,value=$(SERVER),type=PLAINTEXT" | cat
+	@echo "Waiting for image to be available in ECR..."
 	@TIMEOUT=900  # 15 minutes in seconds
 	@START_TIME=$$(date +%s)
 	@while true; do \
 		if [ $$(($$(date +%s) - START_TIME)) -gt $$TIMEOUT ]; then \
-			echo "Timeout waiting for build to complete"; \
+			echo "Timeout waiting for image to be available"; \
 			exit 1; \
 		fi; \
-		BUILD_STATUS=$$(aws codebuild batch-get-builds --ids $$BUILD_ID --query 'builds[0].buildStatus' --output text 2>/dev/null || echo "UNKNOWN"); \
-		if [ "$$BUILD_STATUS" = "UNKNOWN" ]; then \
-			echo "Unable to get build status, checking ECR for image..."; \
-			if aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?contains(imageTags, `latest`)]' --output text > /dev/null 2>&1; then \
-				echo "Image found in ECR, build likely completed successfully!"; \
-				break; \
-			fi; \
-		fi; \
-		echo "Build status: $$BUILD_STATUS"; \
-		if [ "$$BUILD_STATUS" = "SUCCEEDED" ]; then \
-			echo "Build completed successfully!"; \
+		if aws ecr describe-images --repository-name $(ECR_REPO_NAME) --query 'imageDetails[?contains(imageTags, `latest`)]' --output text > /dev/null 2>&1; then \
+			echo "Image is available in ECR!"; \
 			break; \
-		elif [ "$$BUILD_STATUS" = "FAILED" ]; then \
-			echo "Build failed! Check CodeBuild logs for details."; \
-			exit 1; \
 		fi; \
+		echo "Waiting for image to be available..."; \
 		sleep 30; \
 	done
-	@echo "Build and image push completed successfully!"
 
 ### Step 5: Create the CI/CD pipeline and ECS Service
 deploy-pipeline: build-push-image
