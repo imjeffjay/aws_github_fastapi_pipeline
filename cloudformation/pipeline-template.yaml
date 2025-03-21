@@ -74,6 +74,28 @@ Resources:
           PortMappings:
             - ContainerPort: 8000
 
+  ALBSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Allow HTTP traffic to ALB"
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
+
+  ECSSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Allow traffic from ALB to FastAPI"
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: 8000
+          ToPort: 8000
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+
   ECSService:
     Type: "AWS::ECS::Service"
     Properties:
@@ -85,6 +107,8 @@ Resources:
       NetworkConfiguration:
         AwsvpcConfiguration:
           Subnets: !Ref SubnetIds
+          SecurityGroups:
+            - !Ref ECSSecurityGroup 
           AssignPublicIp: "ENABLED"
       DeploymentConfiguration:
         MaximumPercent: 200
@@ -224,6 +248,36 @@ Resources:
             Value: !Ref Server
             Type: PLAINTEXT
 
+  ApplicationLoadBalancer:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      Name: "FastAPI-ALB"
+      Scheme: "internet-facing"
+      Type: "application"
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Subnets: !Ref SubnetIds
+
+  ALBTargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      Name: "FastAPI-TargetGroup"
+      Protocol: "HTTP"
+      Port: 8000
+      VpcId: !Ref VPCId
+      TargetType: "ip"
+      HealthCheckPath: "/docs"
+
+  ALBListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Protocol: "HTTP"
+      Port: 80
+      DefaultActions:
+        - Type: "forward"
+          TargetGroupArn: !Ref ALBTargetGroup
+
 Outputs:
   PipelineName:
     Description: "The CodePipeline Name"
@@ -234,3 +288,6 @@ Outputs:
   TaskDefinition:
     Description: "The ECS Task Definition"
     Value: !Ref ECSTaskDefinition
+  LoadBalancerDNS:
+    Description: "Public DNS of the Application Load Balancer"
+    Value: !GetAtt ApplicationLoadBalancer.DNSName

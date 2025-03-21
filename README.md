@@ -52,3 +52,26 @@ aws ecs describe-services --cluster fastapi2-cluster --services fastapi2-stack-E
 aws codepipeline get-pipeline --name fastapi2-PIPELINEstack-CodePipeline-3w6R6Wd2XiXt --query 'pipeline.roleArn' --output text
 aws iam list-attached-role-policies --role-name fastapi2-IAMStack-CodePipelineRole-a7Ervmoi7TAb
 aws iam list-role-policies --role-name fastapi2-IAMStack-CodePipelineRole-a7Ervmoi7TAb
+
+
+TASK_ARN="arn:aws:ecs:us-east-1:475634715655:task/fastapi2-cluster/af4486bc5a3b420981497cddd8674393"
+
+
+[cloudshell-user@ip-10-136-35-161 aws_github_fastapi_pipeline]$ TASK_ARN=$(aws ecs list-tasks --cluster fastapi2-cluster --query "taskArns[0]" --output text)
+
+[cloudshell-user@ip-10-136-35-161 aws_github_fastapi_pipeline]$ echo "Task ARN: $TASK_ARN"
+Task ARN: arn:aws:ecs:us-east-1:475634715655:task/fastapi2-cluster/ceefe85b51cc47128d174a938d9a84b4
+[cloudshell-user@ip-10-136-35-161 aws_github_fastapi_pipeline]$ 
+
+[cloudshell-user@ip-10-136-35-161 aws_github_fastapi_pipeline]$ aws ecs describe-tasks \
+>   --cluster fastapi2-cluster \
+>   --tasks "$TASK_ARN" \
+>   --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value" \
+>   --output text
+eni-04438891e249fd4ec
+
+
+aws ec2 describe-network-interfaces \
+  --network-interface-ids eni-04438891e249fd4ec \
+  --query "NetworkInterfaces[0].Association.PublicIp" \
+  --output text
