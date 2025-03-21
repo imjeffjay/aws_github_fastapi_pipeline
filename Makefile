@@ -37,6 +37,7 @@ DOCKERTOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRE
 DOCKERUSERNAME = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.DOCKERUSERNAME')
 AWS_ACCOUNT_ID = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AWS_ACCOUNT_ID')
 AWS_REGION = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AWS_REGION')
+VPC_ID := $(shell aws ec2 describe-vpcs --filters "Name=isDefault,Values=true" --query "Vpcs[0].VpcId" --output text)
 
 ### From Setup-Resoucres
 ARTIFACT_BUCKET_NAME=$(shell aws s3api list-buckets --query "Buckets[?contains(Name, \`${AWS_ACCOUNT_ID}-\`)].Name" --output text | grep $(AWS_REGION) || echo "")
@@ -209,6 +210,7 @@ deploy-pipeline:
 			DOCKERTOKEN=$(DOCKERTOKEN) \
 			ArtifactBucketName=$(ARTIFACT_BUCKET_NAME) \
 			ECRRepoName=$(ECR_REPO) \
+			VPCId=$(VPC_ID) \
 		--capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM
 	@echo "Pipeline deployed successfully!"
 	@echo "The pipeline will now monitor GitHub for updates and automatically build and deploy new images."
@@ -236,6 +238,10 @@ get-endpoint:
 		--stack-name $(PIPELINE_STACK_NAME) \
 		--query "Stacks[0].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue" \
 		--output text
+
+open-endpoint:
+	@echo "Opening FastAPI public endpoint in browser..."
+	@open "http://$$(make get-endpoint)"
 
 cleanup:
 	@echo "Cleaning up general purpose bucket first..."

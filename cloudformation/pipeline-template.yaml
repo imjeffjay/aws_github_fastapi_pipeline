@@ -53,6 +53,9 @@ Parameters:
   Server:
     Type: String
     Description: "The source control server (e.g., GitHub, Bitbucket)"
+  VPCId:
+    Type: String
+    Description: "The VPC ID where ECS and ALB live"
 
 Resources:
   ECSTaskDefinition:
