@@ -132,10 +132,20 @@ Resources:
                 - Name: "BuildOutput"
               Configuration:
                 ProjectName: !Ref ProjectName
-                EnvironmentVariables:
-                  - Name: "CONTAINER_NAME"
-                    Value: !Ref ContainerName
-                    Type: PLAINTEXT
+                EnvironmentVariables: !Sub |
+                  [
+                    {"name": "AWS_REGION", "value": "${AWSRegion}", "type": "PLAINTEXT"},
+                    {"name": "AWS_ACCOUNT_ID", "value": "${AWSAccountId}", "type": "PLAINTEXT"},
+                    {"name": "ECR_REPO_NAME", "value": "${ECRRepoName}", "type": "PLAINTEXT"},
+                    {"name": "CONTAINER_NAME", "value": "${ContainerName}", "type": "PLAINTEXT"},
+                    {"name": "GITHUB_TOKEN", "value": "${GitHubOAuthToken}", "type": "PLAINTEXT"},
+                    {"name": "GITHUB_OWNER", "value": "${GitHubOwner}", "type": "PLAINTEXT"},
+                    {"name": "GITHUB_REPO", "value": "${GitHubRepo}", "type": "PLAINTEXT"},
+                    {"name": "AUTH_TYPE", "value": "${AuthType}", "type": "PLAINTEXT"},
+                    {"name": "DOCKERTOKEN", "value": "${DOCKERTOKEN}", "type": "PLAINTEXT"},
+                    {"name": "DOCKERUSERNAME", "value": "${DOCKERUSERNAME}", "type": "PLAINTEXT"},
+                    {"name": "SERVER", "value": "${Server}", "type": "PLAINTEXT"}
+                  ]
         - Name: "Deploy"
           Actions:
             - Name: "Deploy"
