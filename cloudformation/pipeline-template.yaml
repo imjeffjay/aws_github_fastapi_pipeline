@@ -110,6 +110,10 @@ Resources:
           SecurityGroups:
             - !Ref ECSSecurityGroup 
           AssignPublicIp: "ENABLED"
+      LoadBalancers:                          
+        - ContainerName: !Ref ContainerName
+          ContainerPort: 8000
+          TargetGroupArn: !Ref ALBTargetGroup
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 100

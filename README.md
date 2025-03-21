@@ -75,3 +75,16 @@ aws ec2 describe-network-interfaces \
   --network-interface-ids eni-04438891e249fd4ec \
   --query "NetworkInterfaces[0].Association.PublicIp" \
   --output text
+
+
+  TASK_ARN=$(aws ecs list-tasks --cluster fastapi2-cluster --query "taskArns[0]" --output text)
+echo "Task ARN: $TASK_ARN"
+
+
+
+ENI_ID=$(aws ecs describe-tasks \
+  --cluster fastapi2-cluster \
+  --tasks "$TASK_ARN" \
+  --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value" \
+  --output text)
+echo "ENI ID: $ENI_ID"
