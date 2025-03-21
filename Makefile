@@ -229,6 +229,14 @@ check-aws-credentials:
 # Cleanup
 # ====================
 
+
+get-endpoint:
+	@echo "Fetching FastAPI endpoint from stack: $(PIPELINE_STACK_NAME)"
+	@aws cloudformation describe-stacks \
+		--stack-name $(PIPELINE_STACK_NAME) \
+		--query "Stacks[0].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue" \
+		--output text
+
 cleanup:
 	@echo "Cleaning up general purpose bucket first..."
 	@aws s3 rm s3://$(BUCKET_NAME) --recursive || true
