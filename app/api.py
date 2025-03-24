@@ -1,19 +1,17 @@
-from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Optional
-
-app = FastAPI()
 
 class ForecastRequest(BaseModel):
     forecast_date: str
     current_price: float
     asset_class: str
 
-@app.post("/forecast")
 def forecast_price(request: ForecastRequest):
+    # Placeholder logic (e.g., +5%)
+    forecasted_price = round(request.current_price * 1.05, 2)
     return {
         "forecast_date": request.forecast_date,
         "current_price": request.current_price,
         "asset_class": request.asset_class,
-        "forecasted_price": 999.0
+        "forecasted_price": forecasted_price
     }
+

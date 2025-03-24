@@ -304,9 +304,9 @@ get-endpoint:
 		--query "Stacks[0].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue" \
 		--output text
 
-open-endpoint:
-	@echo "Opening FastAPI public endpoint in browser..."
-	@open "http://$$(make get-endpoint)"
+curl-endpoint:
+	@echo "Pinging FastAPI root endpoint..."
+	@curl http://$$(make --no-print-directory get-endpoint)/
 
 
 
