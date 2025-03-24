@@ -231,6 +231,71 @@ check-aws-credentials:
 # Cleanup
 # ====================
 
+.PHONY: cleanup-alb cleanup-pipeline cleanup-setup cleanup-iam cleanup-bucket
+
+cleanup-alb:
+	@echo "Cleaning up ALB and its dependencies..."
+	@if aws elbv2 describe-load-balancers --names fastapi2-project-alb >/dev/null 2>&1; then \
+		echo "Deleting ALB listener..."; \
+		aws elbv2 describe-listeners --load-balancer-arn $$(aws elbv2 describe-load-balancers --names fastapi2-project-alb --query 'LoadBalancers[0].LoadBalancerArn' --output text) --query 'Listeners[*].ListenerArn' --output text | xargs -I {} aws elbv2 delete-listener --listener-arn {}; \
+		echo "Deleting target group..."; \
+		aws elbv2 describe-target-groups --names fastapi2-project-tg --query 'TargetGroups[0].TargetGroupArn' --output text | xargs -I {} aws elbv2 delete-target-group --target-group-arn {}; \
+		echo "Deleting ALB..."; \
+		aws elbv2 delete-load-balancer --load-balancer-arn $$(aws elbv2 describe-load-balancers --names fastapi2-project-alb --query 'LoadBalancers[0].LoadBalancerArn' --output text); \
+		echo "Waiting for ALB deletion to complete..."; \
+		aws elbv2 wait load-balancer-available --load-balancer-arns $$(aws elbv2 describe-load-balancers --names fastapi2-project-alb --query 'LoadBalancers[0].LoadBalancerArn' --output text); \
+	else \
+		echo "ALB not found, skipping ALB cleanup..."; \
+	fi
+
+cleanup-pipeline: cleanup-alb
+	@echo "Cleaning up pipeline stack..."
+	@if aws cloudformation describe-stacks --stack-name $(PIPELINE_STACK_NAME) >/dev/null 2>&1; then \
+		echo "Deleting pipeline stack..."; \
+		aws cloudformation delete-stack --stack-name $(PIPELINE_STACK_NAME); \
+		echo "Waiting for stack deletion to complete..."; \
+		aws cloudformation wait stack-delete-complete --stack-name $(PIPELINE_STACK_NAME); \
+	else \
+		echo "Pipeline stack not found, skipping pipeline cleanup..."; \
+	fi
+
+cleanup-setup: cleanup-pipeline
+	@echo "Cleaning up setup resources..."
+	@if aws cloudformation describe-stacks --stack-name $(SETUP_STACK_NAME) >/dev/null 2>&1; then \
+		echo "Deleting ECR repository first..."; \
+		aws ecr delete-repository --repository-name $(ECR_REPO_NAME) --force || true; \
+		echo "Deleting setup stack..."; \
+		aws cloudformation delete-stack --stack-name $(SETUP_STACK_NAME); \
+		echo "Waiting for stack deletion to complete..."; \
+		aws cloudformation wait stack-delete-complete --stack-name $(SETUP_STACK_NAME); \
+	else \
+		echo "Setup stack not found, skipping setup cleanup..."; \
+	fi
+
+cleanup-iam: cleanup-setup
+	@echo "Cleaning up IAM resources..."
+	@if aws cloudformation describe-stacks --stack-name $(IAM_STACK_NAME) >/dev/null 2>&1; then \
+		echo "Deleting IAM stack..."; \
+		aws cloudformation delete-stack --stack-name $(IAM_STACK_NAME); \
+		echo "Waiting for stack deletion to complete..."; \
+		aws cloudformation wait stack-delete-complete --stack-name $(IAM_STACK_NAME); \
+	else \
+		echo "IAM stack not found, skipping IAM cleanup..."; \
+	fi
+
+cleanup-bucket: cleanup-iam
+	@echo "Cleaning up S3 bucket..."
+	@if aws s3api head-bucket --bucket $(BUCKET_NAME) 2>/dev/null; then \
+		echo "Deleting contents of bucket $(BUCKET_NAME)..."; \
+		aws s3 rm s3://$(BUCKET_NAME) --recursive || true; \
+		echo "Deleting bucket $(BUCKET_NAME)..."; \
+		aws s3api delete-bucket --bucket $(BUCKET_NAME) || true; \
+	else \
+		echo "Bucket $(BUCKET_NAME) not found, skipping bucket cleanup..."; \
+	fi
+
+cleanup: cleanup-bucket
+	@echo "Cleanup completed!"
 
 get-endpoint:
 	@echo "Fetching FastAPI endpoint from stack: $(PIPELINE_STACK_NAME)"
@@ -242,37 +307,6 @@ get-endpoint:
 open-endpoint:
 	@echo "Opening FastAPI public endpoint in browser..."
 	@open "http://$$(make get-endpoint)"
-
-cleanup:
-	@echo "Cleaning up general purpose bucket first..."
-	@aws s3 rm s3://$(BUCKET_NAME) --recursive || true
-	@aws s3api delete-bucket --bucket $(BUCKET_NAME) || true
-	@echo "Bucket cleanup completed"
-
-	@echo "Checking for existing stacks..."
-	@if aws cloudformation describe-stacks --stack-name $(PIPELINE_STACK_NAME) 2>/dev/null | cat; then \
-		echo "Deleting pipeline stack $(PIPELINE_STACK_NAME)..."; \
-		aws cloudformation delete-stack --stack-name $(PIPELINE_STACK_NAME); \
-		aws cloudformation wait stack-delete-complete --stack-name $(PIPELINE_STACK_NAME); \
-	fi
-	@if aws cloudformation describe-stacks --stack-name $(SETUP_STACK_NAME) 2>/dev/null | cat; then \
-		echo "Deleting ECR repository first..."; \
-		aws ecr delete-repository --repository-name $(ECR_REPO_NAME) --force; \
-		echo "Deleting setup resources stack $(SETUP_STACK_NAME)..."; \
-		aws cloudformation delete-stack --stack-name $(SETUP_STACK_NAME); \
-		aws cloudformation wait stack-delete-complete --stack-name $(SETUP_STACK_NAME); \
-	fi
-	@if aws cloudformation describe-stacks --stack-name $(IAM_STACK_NAME) 2>/dev/null | cat; then \
-		echo "Deleting IAM stack $(IAM_STACK_NAME)..."; \
-		aws cloudformation delete-stack --stack-name $(IAM_STACK_NAME); \
-		aws cloudformation wait stack-delete-complete --stack-name $(IAM_STACK_NAME); \
-	fi
-	@if aws cloudformation describe-stacks --stack-name $(BUCKET_STACK_NAME) 2>/dev/null | cat; then \
-		echo "Deleting artifact bucket stack $(BUCKET_STACK_NAME)..."; \
-		aws cloudformation delete-stack --stack-name $(BUCKET_STACK_NAME); \
-		aws cloudformation wait stack-delete-complete --stack-name $(BUCKET_STACK_NAME); \
-	fi
-	@echo "Cleanup completed"
 
 
 
