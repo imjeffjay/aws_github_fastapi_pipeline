@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Forecast UI</title>
+</head>
+<body>
+  <h1>📈 Secure Forecast Demo</h1>
+
+  <p>{{ message }}</p>
+
+  <form method="post" action="/predict">
+    <label for="input_data">Your input:</label>
+    <input type="text" id="input_data" name="input_data" required>
+    <button type="submit">Submit</button>
+  </form>
+
+  {% if result %}
+    <hr>
+    <h3>Result</h3>
+    <p>{{ result }}</p>
+  {% endif %}
+</body>
+</html>
+
