@@ -1,17 +1,22 @@
 from pydantic import BaseModel
 
 class ForecastRequest(BaseModel):
-    forecast_date: str
-    current_price: float
-    asset_class: str
+    age: int
+    income: float
+    loan_amount: float
+    credit_score: int
+    existing_debt: float
+    employment_years: int
 
 def forecast_price(request: ForecastRequest):
-    # Placeholder logic (e.g., +5%)
-    forecasted_price = round(request.current_price * 1.05, 2)
+    # Dummy logic for now
+    risk_score = round(request.loan_amount / max(request.income, 1), 2)
     return {
-        "forecast_date": request.forecast_date,
-        "current_price": request.current_price,
-        "asset_class": request.asset_class,
-        "forecasted_price": forecasted_price
+        "risk_score": risk_score,
+        "risk_level": "low",
+        "recommendation": "approve",
+        "explanation": "Demo result",
+        "model_version": "v1.0"
     }
+
 
