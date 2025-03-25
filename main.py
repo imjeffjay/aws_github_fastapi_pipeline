@@ -1,42 +1,68 @@
 from fastapi import FastAPI, Depends, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+import requests
+
 from app.api import forecast_price, ForecastRequest
-from app.auth import router as auth_router, get_current_user
+from app.auth import router as auth_router
 from app.models import User
 
-app = FastAPI(
-    title="Secure Forecast API",
-    description="Demo with login + token + model",
-    version="0.1"
-)
-
-# Include auth routes
+app = FastAPI(title="Secure Forecast API", description="Demo with login + token + model", version="0.1")
 app.include_router(auth_router)
 
-# HTML template setup
 templates = Jinja2Templates(directory="fastapi_frontend/templates")
 
-# Public homepage using Jinja2
 @app.get("/", response_class=HTMLResponse)
-def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "message": "Enter data to forecast."})
+def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
 
-# Forecast form handler (NOT secured)
-@app.post("/predict", response_class=HTMLResponse)
-def predict(
+@app.post("/login", response_class=HTMLResponse)
+def handle_login(request: Request, username: str = Form(...), password: str = Form(...)):
+    response = requests.post("http://localhost:8000/token", data={"username": username, "password": password})
+    
+    if response.status_code == 200:
+        token = response.json()["access_token"]
+        return templates.TemplateResponse("dashboard.html", {
+            "request": request,
+            "token": token,
+            "result": None
+        })
+    else:
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": "Invalid credentials"
+        })
+
+@app.post("/forecast", response_class=HTMLResponse)
+def handle_forecast(
     request: Request,
-    input_data: str = Form(...),
+    token: str = Form(...),
+    age: int = Form(...),
+    income: int = Form(...),
+    loan_amount: int = Form(...),
+    credit_score: int = Form(...),
+    existing_debt: int = Form(...),
+    employment_years: int = Form(...)
 ):
-    # This is a placeholder until we wire it to your model
-    result = f"Received input: {input_data}"
-    return templates.TemplateResponse("index.html", {
+    response = requests.post("http://localhost:8000/forecast",
+                             headers={"Authorization": f"Bearer {token}"},
+                             json={
+                                 "age": age,
+                                 "income": income,
+                                 "loan_amount": loan_amount,
+                                 "credit_score": credit_score,
+                                 "existing_debt": existing_debt,
+                                 "employment_years": employment_years
+                             })
+    
+    if response.status_code == 200:
+        result = response.json()
+    else:
+        result = f"Error {response.status_code}: {response.text}"
+
+    return templates.TemplateResponse("dashboard.html", {
         "request": request,
-        "message": "Submitted to /predict",
+        "token": token,
         "result": result
     })
 
-# Secured API forecast route (same as before)
-@app.post("/forecast")
-def secured_forecast(request: ForecastRequest, user: User = Depends(get_current_user)):
-    return forecast_price(request)

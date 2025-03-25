@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Forecast Dashboard</title>
+</head>
+<body>
+  <h2> Credit Forecast</h2>
+
+  <form method="post" action="/forecast">
+    <input type="hidden" name="token" value="{{ token }}">
+
+    <label>Age:</label><input type="number" name="age" value="35"><br>
+    <label>Income:</label><input type="number" name="income" value="72000"><br>
+    <label>Loan Amount:</label><input type="number" name="loan_amount" value="15000"><br>
+    <label>Credit Score:</label><input type="number" name="credit_score" value="670"><br>
+    <label>Existing Debt:</label><input type="number" name="existing_debt" value="3200"><br>
+    <label>Employment Years:</label><input type="number" name="employment_years" value="5"><br><br>
+
+    <button type="submit">Submit Forecast</button>
+  </form>
+
+  {% if result %}
+    <hr>
+    <h3> Forecast Result</h3>
+    <pre>{{ result }}</pre>
+  {% endif %}
+</body>
+</html>
+
