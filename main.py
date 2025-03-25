@@ -16,3 +16,7 @@ app.include_router(auth_router)
 @app.post("/forecast")
 def secured_forecast(request: ForecastRequest, user: User = Depends(get_current_user)):
     return forecast_price(request)
+
+@app.get("/")
+def root():
+    return {"message": "API is live!"}

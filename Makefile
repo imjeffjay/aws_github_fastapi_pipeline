@@ -45,6 +45,20 @@ ARTIFACT_BUCKET_ARN=$(shell echo "arn:aws:s3:::$(ARTIFACT_BUCKET_NAME)")
 ECR_REPO=$(shell aws cloudformation describe-stack-resources --stack-name $(SETUP_STACK_NAME) --query "StackResources[?LogicalResourceId=='ECRRepository'].PhysicalResourceId" --output text)
 CLUSTER=$(shell aws cloudformation describe-stack-resources --stack-name $(SETUP_STACK_NAME) --query "StackResources[?LogicalResourceId=='ECSCluster'].PhysicalResourceId" --output text)
 CODEBUILD_PROJECT=$(shell aws cloudformation describe-stack-resources --stack-name $(SETUP_STACK_NAME) --query "StackResources[?ResourceType=='AWS::CodeBuild::Project'].PhysicalResourceId" --output text)
+CLUSTER_NAME = $(shell aws cloudformation describe-stack-resources \
+	--stack-name $(SETUP_STACK_NAME) \
+	--query "StackResources[?LogicalResourceId=='ECSCluster'].PhysicalResourceId" \
+	--output text)
+
+FASTAPI_SERVICE = $(shell aws cloudformation describe-stack-resources \
+	--stack-name $(SETUP_STACK_NAME) \
+	--query "StackResources[?LogicalResourceId=='FastAPIService'].PhysicalResourceId" \
+	--output text)
+
+STREAMLIT_SERVICE = $(shell aws cloudformation describe-stack-resources \
+	--stack-name $(SETUP_STACK_NAME) \
+	--query "StackResources[?LogicalResourceId=='StreamlitService'].PhysicalResourceId" \
+	--output text 2>/dev/null || echo "")
 
 IAM_ROLE = $(shell aws cloudformation describe-stack-resources \
 	--stack-name $(IAM_STACK_NAME) \
@@ -297,6 +311,23 @@ cleanup-bucket: cleanup-iam
 cleanup: cleanup-bucket
 	@echo "Cleanup completed!"
 
+
+pause-services:
+	@echo "Pausing FastAPI ECS service in cluster: $(CLUSTER_NAME)"
+	@aws ecs update-service \
+		--cluster $(CLUSTER_NAME) \
+		--service $(FASTAPI_SERVICE) \
+		--desired-count 0
+	@echo "FastAPI service paused."
+
+resume-services:
+	@echo "Resuming FastAPI ECS service in cluster: $(CLUSTER_NAME)"
+	@aws ecs update-service \
+		--cluster $(CLUSTER_NAME) \
+		--service $(FASTAPI_SERVICE) \
+		--desired-count 1
+	@echo "FastAPI service resumed."
+
 get-endpoint:
 	@echo "Fetching FastAPI endpoint from stack: $(PIPELINE_STACK_NAME)"
 	@aws cloudformation describe-stacks \
@@ -309,6 +340,31 @@ curl-endpoint:
 	@curl http://$$(make --no-print-directory get-endpoint)/
 
 
+# Run FastAPI backend (port 8000)
+run-api:
+	@echo "Starting FastAPI on port 8000..."
+	uvicorn main:app --reload
 
+# Run Streamlit frontend (port 8501)
+run-streamlit:
+	@echo "Starting Streamlit on port 8501..."
+	streamlit run app/app.py
+
+
+########################################################
+#### Local Commands 
+########################################################
+
+# Run both (must run in separate terminals)
+run:
+	@echo "Start FastAPI and Streamlit in separate terminals:"
+	@echo "Run: make run-api"
+	@echo "Then: make run-streamlit"
+
+# Kill processes on ports 8000 (FastAPI) and 8501 (Streamlit)
+kill:
+	@echo "Killing FastAPI (port 8000) and Streamlit (port 8501)..."
+	@lsof -ti :8000 | xargs kill -9 2>/dev/null || echo "No FastAPI running on 8000"
+	@lsof -ti :8501 | xargs kill -9 2>/dev/null || echo "No Streamlit running on 8501"
 
 
