@@ -37,13 +37,14 @@ cd aws_github_fastapi_pipeline
 ```
 > Update repo name as needed
 
-### Step 3.2: Load secret name from the Makefile
+### Step 3.2: Load secret name from the Makefile or create manually in AWS
 
 ```bash
 export AWSSECRETS=$(grep '^AWSSECRETS' Makefile | cut -d '=' -f2 | xargs)
 ```
 
-### Step 3.3: Create the secret (edit values inline before hitting enter)
+### Step 3.3: Create the secret (edit values inline before hitting enter) or create manually in AWS
+
 ```bash
 aws secretsmanager create-secret \
   --name "$AWSSECRETS" \

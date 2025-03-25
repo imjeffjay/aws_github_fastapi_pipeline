@@ -7,13 +7,13 @@ import os
 # ========================
 
 # Local testing
- API_URL = "http://localhost:8000"
+# API_URL = "http://localhost:8000"
 
 # Public ECS ALB URL (for ECS testing)
 # API_URL = "http://FastAPI-ALB-xxxxxxxxxx.us-east-1.elb.amazonaws.com"
 
 # From Streamlit Cloud Secrets (for deploy)
-#API_URL = st.secrets.get("API_URL", "http://localhost:8000")
+API_URL = st.secrets.get("API_URL", "http://localhost:8000")
 
 # From environment variable (recommended for Docker/local scripting)
 # API_URL = os.getenv("API_URL", "http://localhost:8000")
