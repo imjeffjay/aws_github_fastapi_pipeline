@@ -1,38 +1,109 @@
-# aws_pipeline_setup
-A repository to automate the setup of AWS CI/CD pipelines using a Makefile and reusable templates. It creates ECR, ECS, and CodePipeline resources, integrates with Secrets Manager for secure configuration, and enables GitHub-triggered deployments for containerized applications.
+# FastAPI CI/CD Pipeline with AWS Fargate
 
-## Cloudshell command - Clone github repos
-git clone https://imjeffjay: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@github.com/imjeffjay/sample_ML_AWS_pipeline.git
-git clone https://imjeffjay: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@github.com/imjeffjay/aws_pipeline_setup.git
+This project sets up a complete CI/CD pipeline for deploying a **FastAPI** application using **AWS CloudFormation**, **CodePipeline**, **ECS Fargate**, and **GitHub**. It supports fully automated infrastructure, token-secured API endpoints, and optional frontends via HTML or Streamlit.
 
-## Update Repo
-git pull origin main
+---
 
-ls -> find project
-cd
+## Project Overview
 
-make comands 
+- FastAPI app deployed to ECS Fargate via CodePipeline
+- Infrastructure managed using CloudFormation + Makefile
+- Local + CloudShell compatible
+- Secure forecast API with token-based login (`/token` + `/forecast`)
+- Future-ready frontend options: Jinja2 or Streamlit
+
+---
+
+## Working Model: Local → GitHub → CloudShell → Deploy
+
+### Step 1: Develop Locally
+- Clone the repo to your local machine
+- Edit static variables in the Makefile (e.g., AWSSECRETS, PROJECT_NAME, etc.)
+    > Located at the top of the `Makefile`, these variables define your project-specific naming and structure
+
+### Step 2: Push to GitHub
+
+```bash
+git add Makefile
+git commit -m "Update static deployment variables"
+git push origin main
+```
+### Step 3.1: Setup cloudshell 
+
+```bash
+# Clone this repo (CI/CD setup) in cloudshell
+git clone https://github.com/YOUR_USERNAME/aws_github_fastapi_pipeline.git
+cd aws_github_fastapi_pipeline
+```
+> Update repo name as needed
+
+### Step 3.2: Load secret name from the Makefile
+
+```bash
+export AWSSECRETS=$(grep '^AWSSECRETS' Makefile | cut -d '=' -f2 | xargs)
+```
+
+### Step 3.3: Create the secret (edit values inline before hitting enter)
+```bash
+aws secretsmanager create-secret \
+  --name "$AWSSECRETS" \
+  --description "CI/CD secret config for FastAPI pipeline" \
+  --secret-string '{
+    "Token": "ghp_xxxxxxxxxxxxxxxxxxxxxxxx",
+    "GitHubOwner": "your-github-username-or-org",
+    "GitHubRepo2": "your-repo-name",
+    "AuthType": "PERSONAL_ACCESS_TOKEN",
+    "ServerType": "GitHub",
+    "DOCKERTOKEN": "your-dockerhub-token",
+    "DOCKERUSERNAME": "your-dockerhub-username",
+    "AWS_ACCOUNT_ID": "123456789012",
+    "AWS_REGION": "us-east-1"
+  }'
+```
+### Step 4: After creating your secret, you can deploy the full CI/CD stack using:
+
+```bash
+make setup-all
+```
+### This command will:
+
+- Verify your AWS credentials
+- Create the artifact S3 bucket
+- Create IAM roles
+- Deploy the setup resources (ECR, ECS Cluster, CodeBuild)
+- Build and push the Docker image
+- Deploy the CodePipeline and ECS service
+
+> if you encounter any issues you will need to review the logs and delete service and redploy using the individual make commands
+
+---
+
+## Additional Commands
 
 
-### Local Execution
-python -m venv ../venv-credit-api  # outside the folder to keep it clean
-source ../venv-credit-api/bin/activate
 
-python -m venv venv # inside project dir
-source venv/bin/activate
+### Runtime Management
+| Command                | Description                                          |
+|------------------------|------------------------------------------------------|
+| `make pause-services`  | Scale down the FastAPI ECS service to 0             |
+| `make resume-services` | Scale the service back up to 1                      |
+| `make get-endpoint`    | Get the public Load Balancer DNS for the deployed API |
+| `make curl-endpoint`   | Test the root endpoint (`/`) using `curl`           |
 
-pip install --upgrade pip
-pip install -r requirements.txt
+### Full Cleanup
+| Command                | Description                                              |
+|------------------------|----------------------------------------------------------|
+| `make cleanup`         | Run **all** cleanup steps: ALB → Pipeline → Setup → IAM → Bucket |
+| `make cleanup-alb`     | Delete the load balancer, listeners, and target group    |
+| `make cleanup-pipeline`| Delete the CodePipeline CloudFormation stack             |
+| `make cleanup-setup`   | Delete the setup stack and ECR repository                |
+| `make cleanup-iam`     | Delete the IAM stack used by the pipeline                |
+| `make cleanup-bucket`  | Empty and delete the artifact S3 bucket                  |
 
-uvicorn main:app --reload
-
-lsof -i :8000
-kill #####
-
-uvicorn main:app --reload
-
-streamlit run app/app.py
-
-
-alice@example.com
-secret
+### Local Development Commands
+| Command              | Description                                              |
+|----------------------|----------------------------------------------------------|
+| `make run-api`       | Start the FastAPI app on port `8000`                     |
+| `make run-streamlit` | Start the Streamlit frontend on port `8501`              |
+| `make run`           | Print instructions to run both apps in parallel terminals|
+| `make kill`          | Kill processes on ports `8000` and `8501` (FastAPI & Streamlit) |

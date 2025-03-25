@@ -2,12 +2,10 @@
 # Static Variables
 # ====================
 TEMPLATE_DIR = cloudformation
-
 BUCKET_TEMPLATE = $(TEMPLATE_DIR)/artifact-bucket.yaml
 IAM_TEMPLATE = $(TEMPLATE_DIR)/iam-template.yaml
 SETUP_TEMPLATE = $(TEMPLATE_DIR)/setup-resources.yaml
 PIPELINE_TEMPLATE = $(TEMPLATE_DIR)/pipeline-template.yaml
-
 IMAGE_TAG = latest
 
 PROJECT_PREFIX = fastapi2
@@ -21,13 +19,13 @@ PROJECT_NAME = $(PROJECT_PREFIX)-project
 ECR_REPO_NAME = $(PROJECT_PREFIX)-app
 CLUSTER_NAME = $(PROJECT_PREFIX)-cluster
 BUCKET_NAME = $(AWS_ACCOUNT_ID)-codepipeline-artifacts-$(AWS_REGION)
+AWSSECRETS = awspipeline
 
 # ====================
 # Dynamic Variables
 # ====================
 
-AWSSECRETS = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].Name" --output text)
-SECRET_ARN = $(shell aws secretsmanager list-secrets --query "SecretList[?Name=='awspipeline'].ARN" --output text)
+SECRET_ARN = $(shell aws secretsmanager describe-secret --secret-id $(AWSSECRETS) --query ARN --output text)
 GITHUB_TOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.Token')
 GITHUB_OWNER = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubOwner')
 GITHUB_REPO = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.GitHubRepo2')
@@ -37,9 +35,12 @@ DOCKERTOKEN = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRE
 DOCKERUSERNAME = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.DOCKERUSERNAME')
 AWS_ACCOUNT_ID = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AWS_ACCOUNT_ID')
 AWS_REGION = $(shell aws secretsmanager get-secret-value --secret-id $(AWSSECRETS) --query SecretString --output text | jq -r '.AWS_REGION')
-VPC_ID := $(shell aws ec2 describe-vpcs --filters "Name=isDefault,Values=true" --query "Vpcs[0].VpcId" --output text)
 
-### From Setup-Resoucres
+# ====================
+# From Setup-Resoucres
+# ====================
+
+VPC_ID := $(shell aws ec2 describe-vpcs --filters "Name=isDefault,Values=true" --query "Vpcs[0].VpcId" --output text)
 ARTIFACT_BUCKET_NAME=$(shell aws s3api list-buckets --query "Buckets[?contains(Name, \`${AWS_ACCOUNT_ID}-\`)].Name" --output text | grep $(AWS_REGION) || echo "")
 ARTIFACT_BUCKET_ARN=$(shell echo "arn:aws:s3:::$(ARTIFACT_BUCKET_NAME)")
 ECR_REPO=$(shell aws cloudformation describe-stack-resources --stack-name $(SETUP_STACK_NAME) --query "StackResources[?LogicalResourceId=='ECRRepository'].PhysicalResourceId" --output text)
