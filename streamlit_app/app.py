@@ -1,5 +1,22 @@
 import streamlit as st
 import requests
+import os
+
+# ========================
+# API URL Configuration
+# ========================
+
+# Local testing
+ API_URL = "http://localhost:8000"
+
+# Public ECS ALB URL (for ECS testing)
+# API_URL = "http://FastAPI-ALB-xxxxxxxxxx.us-east-1.elb.amazonaws.com"
+
+# From Streamlit Cloud Secrets (for deploy)
+#API_URL = st.secrets.get("API_URL", "http://localhost:8000")
+
+# From environment variable (recommended for Docker/local scripting)
+# API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 st.title("Credit Risk Predictor")
 
@@ -12,7 +29,7 @@ username = st.text_input("Email")
 password = st.text_input("Password", type="password")
 
 if st.button("Login"):
-    token_resp = requests.post("http://localhost:8000/token", data={
+    token_resp = requests.post(f"{API_URL}/token", data={
         "username": username,
         "password": password
     })
@@ -36,7 +53,7 @@ if st.session_state["token"]:
 
         if submitted:
             response = requests.post(
-                "http://localhost:8000/forecast",
+                f"{API_URL}/forecast",
                 headers={"Authorization": f"Bearer {st.session_state['token']}"},
                 json={
                     "age": age,
