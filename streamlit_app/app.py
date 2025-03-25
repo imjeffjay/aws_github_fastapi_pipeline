@@ -6,17 +6,12 @@ import os
 # API URL Configuration
 # ========================
 
-# Local testing
-# API_URL = "http://localhost:8000"
+# Priority order:
+# 1. Environment variable (Docker, CLI)
+# 2. Streamlit secrets (Streamlit Cloud)
+# 3. Default to localhost
 
-# Public ECS ALB URL (for ECS testing)
-# API_URL = "http://FastAPI-ALB-xxxxxxxxxx.us-east-1.elb.amazonaws.com"
-
-# From Streamlit Cloud Secrets (for deploy)
-API_URL = st.secrets.get("API_URL", "http://localhost:8000")
-
-# From environment variable (recommended for Docker/local scripting)
-# API_URL = os.getenv("API_URL", "http://localhost:8000")
+API_URL = os.getenv("API_URL") or st.secrets.get("API_URL", "http://localhost:8000")
 
 st.title("Credit Risk Predictor")
 
@@ -53,7 +48,7 @@ if st.session_state["token"]:
 
         if submitted:
             response = requests.post(
-                f"{API_URL}/forecast",
+                f"{API_URL}/api/forecast",
                 headers={"Authorization": f"Bearer {st.session_state['token']}"},
                 json={
                     "age": age,
@@ -65,8 +60,19 @@ if st.session_state["token"]:
                 }
             )
             if response.status_code == 200:
+                result = response.json()
                 st.subheader("Forecast Result")
-                st.json(response.json())
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    st.metric("Risk Score", result.get("risk_score", "N/A"))
+                    st.write("Model Version:", result.get("model_version", "N/A"))
+
+                with col2:
+                    st.write("Risk Level:", f"**{result.get('risk_level', 'N/A')}**")
+                    st.write("Recommendation:", f"**{result.get('recommendation', 'N/A')}**")
+                    st.caption(result.get("explanation", "No explanation provided."))
             else:
                 st.error(f"Request failed: {response.status_code}")
 

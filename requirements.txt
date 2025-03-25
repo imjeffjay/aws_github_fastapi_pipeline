@@ -1,5 +1,5 @@
 # Core Python Libraries
-numpy==1.23.5
+numpy==1.26.4
 pandas==1.5.2
 matplotlib==3.6.2
 
@@ -10,10 +10,11 @@ jupyter-client==7.4.7
 jupyter-core==5.1.0
 
 # FastAPI and related libraries
-fastapi==0.85.1
+fastapi==0.109.0           
 uvicorn==0.21.1
-pydantic==1.10.5
+pydantic==2.6.1              
 python-multipart==0.0.6
+jinja2==3.1.2
 
 # Auth and Security
 passlib[bcrypt]==1.7.4

@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi import Body
 import requests
 
 from app.api import forecast_price, ForecastRequest
@@ -44,25 +45,31 @@ def handle_forecast(
     existing_debt: int = Form(...),
     employment_years: int = Form(...)
 ):
-    response = requests.post("http://localhost:8000/forecast",
-                             headers={"Authorization": f"Bearer {token}"},
-                             json={
-                                 "age": age,
-                                 "income": income,
-                                 "loan_amount": loan_amount,
-                                 "credit_score": credit_score,
-                                 "existing_debt": existing_debt,
-                                 "employment_years": employment_years
-                             })
-    
-    if response.status_code == 200:
-        result = response.json()
-    else:
-        result = f"Error {response.status_code}: {response.text}"
+    # send as JSON to the /forecast API
+    payload = {
+        "age": age,
+        "income": income,
+        "loan_amount": loan_amount,
+        "credit_score": credit_score,
+        "existing_debt": existing_debt,
+        "employment_years": employment_years
+    }
+
+    response = requests.post(
+        "http://localhost:8000/api/forecast",  # ✅ NEW API endpoint
+        headers={"Authorization": f"Bearer {token}"},
+        json=payload
+    )
+
+    result = response.json() if response.status_code == 200 else f"Error {response.status_code}: {response.text}"
 
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "token": token,
         "result": result
     })
+
+@app.post("/api/forecast")
+def forecast_api(request: ForecastRequest = Body(...)):
+    return forecast_price(request)
 

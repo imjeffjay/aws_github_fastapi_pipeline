@@ -1,29 +1,122 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Forecast Dashboard</title>
+  <title>Credit Forecast</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    label, input {
+      display: block;
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+    input {
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    pre {
+      background: #eee;
+      padding: 1rem;
+      border-radius: 6px;
+    }
+
+    .result-box {
+      margin-top: 2rem;
+      background: #f1f1f1;
+      padding: 1rem;
+      border-radius: 8px;
+    }
+
+    .result-box ul {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+
+    .result-box li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .result-box li:last-child {
+      border-bottom: none;
+    }
+
+    .error-box {
+      margin-top: 2rem;
+      background: #ffe5e5;
+      padding: 1rem;
+      border-radius: 8px;
+      color: #a80000;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-  <h2> Credit Forecast</h2>
+  <div class="container">
+    <h2> Credit Forecast</h2>
 
-  <form method="post" action="/forecast">
-    <input type="hidden" name="token" value="{{ token }}">
+    <form method="post" action="/forecast">
+      <input type="hidden" name="token" value="{{ token }}">
 
-    <label>Age:</label><input type="number" name="age" value="35"><br>
-    <label>Income:</label><input type="number" name="income" value="72000"><br>
-    <label>Loan Amount:</label><input type="number" name="loan_amount" value="15000"><br>
-    <label>Credit Score:</label><input type="number" name="credit_score" value="670"><br>
-    <label>Existing Debt:</label><input type="number" name="existing_debt" value="3200"><br>
-    <label>Employment Years:</label><input type="number" name="employment_years" value="5"><br><br>
+      <label>Age:</label>
+      <input type="number" name="age" value="35">
 
-    <button type="submit">Submit Forecast</button>
-  </form>
+      <label>Income:</label>
+      <input type="number" name="income" value="72000">
 
-  {% if result %}
-    <hr>
-    <h3> Forecast Result</h3>
-    <pre>{{ result }}</pre>
-  {% endif %}
+      <label>Loan Amount:</label>
+      <input type="number" name="loan_amount" value="15000">
+
+      <label>Credit Score:</label>
+      <input type="number" name="credit_score" value="670">
+
+      <label>Existing Debt:</label>
+      <input type="number" name="existing_debt" value="3200">
+
+      <label>Employment Years:</label>
+      <input type="number" name="employment_years" value="5">
+
+      <button type="submit">Submit Forecast</button>
+    </form>
+
+    {% if result and result.risk_score is defined %}
+      <div class="result-box">
+        <h3>Prediction Result</h3>
+        <ul>
+          <li><strong>Risk Score:</strong> {{ result.risk_score }}</li>
+          <li><strong>Risk Level:</strong> {{ result.risk_level }}</li>
+          <li><strong>Recommendation:</strong> {{ result.recommendation }}</li>
+          <li><strong>Explanation:</strong> {{ result.explanation }}</li>
+          <li><strong>Model Version:</strong> {{ result.model_version }}</li>
+        </ul>
+      </div>
+    {% elif result %}
+      <div class="error-box">
+        Error: {{ result }}
+      </div>
+    {% endif %}
+  </div>
 </body>
 </html>
 

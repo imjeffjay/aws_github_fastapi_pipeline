@@ -341,31 +341,64 @@ curl-endpoint:
 	@curl http://$$(make --no-print-directory get-endpoint)/
 
 
-# Run FastAPI backend (port 8000)
-run-api:
-	@echo "Starting FastAPI on port 8000..."
-	uvicorn main:app --reload
+# ====================
+# Local Development
+# ====================
 
-# Run Streamlit frontend (port 8501)
-run-streamlit:
-	@echo "Starting Streamlit on port 8501..."
-	streamlit run app/app.py
+# ========= ENVIRONMENT SETUP =========
 
+SHELL := /bin/bash
+.PHONY: setup-env reset-env run-api run-streamlit kill run env-local env-ecs
 
-########################################################
-#### Local Commands 
-########################################################
+setup-env:
+	@echo "Setting up virtual environment."
+	@python3 -m venv venv
+	@venv/bin/pip install --upgrade pip
+	@venv/bin/pip install -r requirements.txt
+	@echo "Environment ready"
 
-# Run both (must run in separate terminals)
+reset-env:
+	@echo "Removing existing virtual environment..."
+	rm -rf venv
+	@echo "Recreating and installing environment..."
+	make setup-env
+
+activate:
+	@echo "Run this to activate the virtual environment:"
+	@echo "source venv/bin/activate"
+
+env-local:
+	@echo "Using LOCAL API for Streamlit"
+	@mkdir -p streamlit_app/.streamlit
+	@echo 'API_URL="http://localhost:8000"' > streamlit_app/.streamlit/secrets.toml
+
+env-ecs:
+	@echo "Using ECS API for Streamlit"
+	@mkdir -p streamlit_app/.streamlit
+	@echo "API_URL=${API_URL}" > streamlit_app/.streamlit/secrets.toml
+
+# ========= GENERAL =========
+
 run:
 	@echo "Start FastAPI and Streamlit in separate terminals:"
-	@echo "Run: make run-api"
-	@echo "Then: make run-streamlit"
+	@echo "Terminal 1: make run-api"
+	@echo "Terminal 2: make run-streamlit"
 
-# Kill processes on ports 8000 (FastAPI) and 8501 (Streamlit)
 kill:
 	@echo "Killing FastAPI (port 8000) and Streamlit (port 8501)..."
 	@lsof -ti :8000 | xargs kill -9 2>/dev/null || echo "No FastAPI running on 8000"
 	@lsof -ti :8501 | xargs kill -9 2>/dev/null || echo "No Streamlit running on 8501"
+
+# ========= LOCAL =========
+
+run-api:
+	@echo "Starting FastAPI on http://localhost:8000"
+	uvicorn main:app --reload
+
+run-streamlit:
+	@echo "Starting Streamlit on http://localhost:8501"
+	cd streamlit_app && streamlit run app.py
+
+
 
 
