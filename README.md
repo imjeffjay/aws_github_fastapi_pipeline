@@ -2,6 +2,14 @@
 
 This project sets up a fully automated CI/CD pipeline for deploying a **FastAPI** application using **AWS ECS Fargate**, **Docker**, **Amazon ECR**, and **GitHub-integrated CodePipeline**. All infrastructure is defined with modular **AWS CloudFormation** templates, including setup for **ECS clusters**, **IAM roles**, **CodeBuild projects**, **S3 artifact buckets**, and an **Application Load Balancer (ALB)**. A **Makefile** drives the deployment process end-to-end, eliminating manual setup and ensuring full reproducibility. Each commit to the `main` branch triggers a secure pipeline that builds and pushes the Docker image to **ECR**, updates the **ECS service**, and routes traffic through the **ALB**, enabling scalable, containerized API deployment with zero-touch operations.
 
+## Demo:
+
+<p align="left">
+  <a href="https://youtu.be/GpLlE_EuBwc">
+    <img src="https://img.youtube.com/vi/GpLlE_EuBwc/hqdefault.jpg" alt="Watch demo on YouTube" width="200">
+  </a>
+</p>
+
 ---
 
 ## Project Overview

@@ -1,4 +1,19 @@
-# Ignore .env files
+
+# Python virtual environments
+venv/
+.venv/
 .env
 venv/
+
+
+# VSCode / JetBrains / MacOS / general editor files
+.vscode/
+.idea/
+.DS_Store
+
+# Bytecode
+__pycache__/
+*.pyc
+
+# Misc:
 notes.md
