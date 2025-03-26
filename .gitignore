@@ -3,7 +3,6 @@
 venv/
 .venv/
 .env
-venv/
 
 
 # VSCode / JetBrains / MacOS / general editor files
@@ -17,3 +16,4 @@ __pycache__/
 
 # Misc:
 notes.md
+*.code-workspace
