@@ -14,8 +14,12 @@ def get_password_hash(password: str) -> str:
 
 # Fake user database
 fake_users_db: Dict[str, User] = {
-    "alice@example.com": User(
-        username="alice@example.com",
-        hashed_password=get_password_hash("secret")
+    "claire@claire.com": User(
+        username="claire@claire.com",
+        hashed_password=get_password_hash("claire")
+    ),
+    "jeff@jeff.com": User(
+        username="jeff@jeff.com",
+        hashed_password=get_password_hash("jeff")
     )
 }

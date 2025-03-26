@@ -5,38 +5,52 @@ import os
 # ========================
 # API URL Configuration
 # ========================
-
-# Priority order:
-# 1. Environment variable (Docker, CLI)
-# 2. Streamlit secrets (Streamlit Cloud)
-# 3. Default to localhost
-
 API_URL = os.getenv("API_URL") or st.secrets.get("API_URL", "http://localhost:8000")
 
-st.title("Credit Risk Predictor")
-
-# Initialize session state for the token
+# ========================
+# Initialize Session State
+# ========================
 if "token" not in st.session_state:
     st.session_state["token"] = None
+if "view" not in st.session_state:
+    st.session_state["view"] = "login"
 
-# Login form
-username = st.text_input("Email")
-password = st.text_input("Password", type="password")
+# ========================
+# Navigation Logic
+# ========================
+def go_to(view_name: str):
+    st.session_state["view"] = view_name
+    st.experimental_rerun()
 
-if st.button("Login"):
-    token_resp = requests.post(f"{API_URL}/token", data={
-        "username": username,
-        "password": password
-    })
+# ========================
+# Login View
+# ========================
+def login_view():
+    st.title("Credit Risk Predictor")
+    st.subheader("Login")
 
-    if token_resp.status_code == 200:
-        st.session_state["token"] = token_resp.json()["access_token"]
-        st.success("Logged in!")
-    else:
-        st.error("Invalid credentials.")
+    username = st.text_input("Email")
+    password = st.text_input("Password", type="password")
 
-# Show forecast form only if logged in
-if st.session_state["token"]:
+    if st.button("Login"):
+        token_resp = requests.post(f"{API_URL}/token", data={
+            "username": username,
+            "password": password
+        })
+
+        if token_resp.status_code == 200:
+            st.session_state["token"] = token_resp.json()["access_token"]
+            go_to("dashboard")
+        else:
+            st.error("Invalid credentials.")
+
+# ========================
+# Dashboard View
+# ========================
+def dashboard_view():
+    st.title("Credit Risk Predictor")
+    st.success("You are logged in.")
+
     with st.form("forecast_form"):
         age = st.number_input("Age", 18, 100, 35)
         income = st.number_input("Income", 0, 500000, 72000)
@@ -59,20 +73,36 @@ if st.session_state["token"]:
                     "employment_years": employment_years
                 }
             )
+
             if response.status_code == 200:
                 result = response.json()
                 st.subheader("Forecast Result")
 
                 col1, col2 = st.columns(2)
-
                 with col1:
                     st.metric("Risk Score", result.get("risk_score", "N/A"))
                     st.write("Model Version:", result.get("model_version", "N/A"))
-
                 with col2:
                     st.write("Risk Level:", f"**{result.get('risk_level', 'N/A')}**")
                     st.write("Recommendation:", f"**{result.get('recommendation', 'N/A')}**")
                     st.caption(result.get("explanation", "No explanation provided."))
             else:
                 st.error(f"Request failed: {response.status_code}")
+                st.code(response.text)
+
+    if st.button("Logout"):
+        st.session_state["token"] = None
+        go_to("login")
+
+# ========================
+# View Dispatcher
+# ========================
+if st.session_state["view"] == "login":
+    login_view()
+elif st.session_state["view"] == "dashboard":
+    if not st.session_state["token"]:
+        go_to("login")
+    else:
+        dashboard_view()
+
 
